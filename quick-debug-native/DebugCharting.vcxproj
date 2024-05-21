@@ -143,9 +143,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Content\index.html.h" />
-    <ClInclude Include="Libs\easywsclient.h" />
-    <ClInclude Include="Libs\httplib.h" />
     <ClInclude Include="src\Content\index.html.h" />
     <ClInclude Include="src\Libs\Ext\Common.hpp" />
     <ClInclude Include="src\Libs\Ext\Common\Dbg.hpp" />

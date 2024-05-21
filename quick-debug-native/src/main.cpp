@@ -25,7 +25,6 @@ int main()
 		float i = 0;
 		while (true) {
 			auto val = std::sin(i++ * MSG_DELAY_MS);
-
 			std::cout << "Sending message: " << val << std::endl;
 			RemoteDebug::Plot("test", val);
 			Sleep(MSG_DELAY_MS);

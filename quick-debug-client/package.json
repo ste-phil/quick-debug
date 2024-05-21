@@ -1,7 +1,7 @@
 {
   "name": "quick-debug",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,5 +18,10 @@
     "typescript": "^5.2.2",
     "vite": "^5.2.0",
     "vite-plugin-singlefile": "^2.0.1"
+  },
+  "dependencies": {
+    "beercss": "^3.5.6",
+    "material-dynamic-colors": "^1.1.0",
+    "scichart": "^3.3.586"
   }
 }
