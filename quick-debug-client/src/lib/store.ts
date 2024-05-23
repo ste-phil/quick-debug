@@ -39,9 +39,9 @@ export class IpDataStore {
         this.trackedIps.update(ips => {
             let elemToRemove = ips.find(x => x.IpAddress === ip)
             if (elemToRemove != undefined) {
-                let result = ips.splice(ips.indexOf(elemToRemove), 1);
+                ips.splice(ips.indexOf(elemToRemove), 1);
                 elemToRemove.Socket?.close();
-                return result;
+                return ips;
             }
             return ips;
         });
