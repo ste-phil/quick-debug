@@ -2,10 +2,7 @@
 #include <thread>
 
 #include "Libs/httplib.h"
-#include "Libs/Ext/Common.hpp"
 #include "Libs/Ext/RemoteDebug.hpp"
-
-#include "Content/index.html.h"
 
 
 void InitWebServer() {
@@ -24,12 +21,13 @@ int main()
 		const int MSG_DELAY_MS = 16;
 		float i = 0;
 		while (true) {
-			auto val = std::sin(i++ * MSG_DELAY_MS);
+			auto val = std::sin(i++ * MSG_DELAY_MS * 0.005);
 			std::cout << "Sending message: " << val << std::endl;
 			RemoteDebug::Plot("test", val);
 			Sleep(MSG_DELAY_MS);
 		}
 	}).detach();
 
-	InitWebServer();
+	auto x = std::cin.get();
+	// InitWebServer();
 }

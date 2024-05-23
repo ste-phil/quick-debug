@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "WebSocketServer.hpp"
+#include "Content/index.html.h"
 
 struct RemoteDebug {
 	static const int WEBSERVER_PORT = 80;
@@ -45,7 +46,7 @@ private:
 
 		m_websocketServerThread.detach();
 		m_webServerThread.detach();
-	};
+	}
 
 	static void InitWebServer() {
 		httplib::Server svr;
@@ -58,7 +59,7 @@ private:
 	}
 
 	static inline std::thread m_websocketServerThread;
-	static inline std::thread m_webServerThread;
+	static inline std::thread m_webServerThread;	
 
 	static inline Ext::WebSocketServer m_server;
 };

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { trackedIps } from "./store";
+    import { ipDataStore } from "./store";
 
     // pos is cursor position when right click occur
     let pos = { x: 0, y: 0 }
@@ -75,7 +75,7 @@
             //and remove it from trackedIps
             const ip = elem?.querySelector("#ip-address")?.textContent;
             if (ip) {
-                trackedIps.update((x) => x.filter((y) => y.IpAddress !== ip));
+                ipDataStore.removeIp(ip);
             }
         }),
     ]

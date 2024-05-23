@@ -2,7 +2,8 @@
     import { onMount } from "svelte";
     import { chartContext } from "./store";
     import { ChartContext } from "./entities";
-	const {
+
+    const {
 		SciChartSurface,
 		SciChartDefaults,
 		chartBuilder,
@@ -21,7 +22,6 @@
 		EExecuteOn
 	} = SciChart;
 
-
 	const customTheme = {
         //axisBorder: "Transparent",
         //axisTitleColor: "#6495ED",
@@ -31,33 +31,33 @@
         //axisBandsFill: "#1F3D6833",
         //axisPlaneBackgroundFill: "Transparent",
         //columnFillBrush: "white",
-        //columnLineColor: "white",
-        //cursorLineBrush: "#b3b3b3",
-        //defaultColorMapBrush: [
-        //    { offset: 0, color: "DarkBlue" },
-        //    { offset: 0.5, color: "CornflowerBlue" },
-        //    { offset: 1, color: "#FF22AA" }
-        //],
+        // columnLineColor: "#e1d7fd",
+        // cursorLineBrush: "white",
+        defaultColorMapBrush: [
+           { offset: 0, color: "red" },
+           { offset: 0.5, color: "CornflowerBlue" },
+           { offset: 1, color: "#FF22AA" }
+        ],
         //downBandSeriesFillColor: "#52CC5490",
         //downBandSeriesLineColor: "#E26565FF",
         //downBodyBrush: "white",
         //downWickColor: "white",
-        //gridBackgroundBrush: "white",
-        //gridBorderBrush: "white",
+        // gridBackgroundBrush: "white",
+        // gridBorderBrush: "white",
         //labelBackgroundBrush: "#6495EDAA",
         //labelBorderBrush: "#6495ED",
         labelForegroundBrush: "#EEEEEE",
         legendBackgroundBrush: "#1D2C35",
         //lineSeriesColor: "white",
-        //loadingAnimationBackground: "#0D213A",
-        //loadingAnimationForeground: "#6495ED",
+        loadingAnimationBackground: "Transparent",
+        loadingAnimationForeground: "Transparent",
         //majorGridLineBrush: "#1F3D68",
         //minorGridLineBrush: "#102A47",
         //mountainAreaBrush: "white",
         //mountainLineColor: "white",
         //overviewFillBrush: "white",
         //planeBorderColor: "white",
-        rolloverLineBrush: "#b3b3b3",
+        rolloverLineBrush: "white",
         //rubberBandFillBrush: "#99999933",
         //rubberBandStrokeBrush: "#99999977",
         sciChartBackground: "transparent",
@@ -67,8 +67,8 @@
         //scrollbarViewportBackgroundBrush: "white",
         //scrollbarViewportBorderBrush: "white",
         //shadowEffectColor: "white",
-        //textAnnotationBackground: "#6495EDAA",
-        //textAnnotationForeground: "#EEEEEE",
+        textAnnotationBackground: "#cdbdfb00",
+        textAnnotationForeground: "black",
         //tickTextBrush: "#6495ED",
         //upBandSeriesFillColor: "white",
         //upBandSeriesLineColor: "white",
@@ -83,9 +83,10 @@
 				theme: new SciChartJsNavyTheme(),
 			},
 		);
+
 		chartContext.set(new ChartContext(
-            sciChartSurface,
-            wasmContext
+            wasmContext,
+            sciChartSurface
         ));
 
 		sciChartSurface.applyTheme(customTheme);
@@ -110,17 +111,13 @@
 		sciChartSurface.xAxes.add(new NumericAxis(wasmContext));
 		sciChartSurface.yAxes.add(new NumericAxis(wasmContext));
 
-		return { sciChartSurface, wasmContext };
+        return { sciChartSurface, wasmContext };
 	}
 
 	onMount(() => {
 		initSciChartProgrammaticApi();
 	});
 </script>
-
-<!-- <div class="responsive"> -->
-	<!-- <h3 class="max">ChartsChartsChartsChartsChartsChartsChartsChartsChartsCharts</h3> -->
-<!-- </div> -->
 
 <div>
 	<h1>Chart</h1>

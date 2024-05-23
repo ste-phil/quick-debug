@@ -10,7 +10,7 @@
 #include <WS2tcpip.h>
 
 #include "Hash/sha1.h"
-#include "Common/Dbg.hpp"
+#include "Common.hpp"
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -195,7 +195,7 @@ namespace Ext {
 
             while (m_isRunning) {
                 if (IsSocketConnected(clientSocket) == false) {
-					DEBUG_PRINT("[WebSocketServer] Socket %ld : Connection closed.", clientSocket);
+					DEBUG_PRINT("[WebSocketServer] Socket %llu : Connection closed.", static_cast<ui64>(clientSocket));
 					break;
 				}
 
@@ -221,7 +221,7 @@ namespace Ext {
                         offset = 4;
                     }
                     else if (msglen == 127) {
-                        // To test the below code, we need to manually buffer larger messages — since the NIC's autobuffering
+                        // To test the below code, we need to manually buffer larger messages â€” since the NIC's autobuffering
                         // may be too latency-friendly for this code to run (that is, we may have only some of the bytes in this
                         // websocket frame available through client.Available).
                         char msgLengthReversed[8] = { buffer[9], buffer[8], buffer[7], buffer[6], buffer[5], buffer[4], buffer[3], buffer[2] };
@@ -230,12 +230,12 @@ namespace Ext {
                     }
 
                     if (msglen == 0) {
-                        DEBUG_PRINT("[WebSocketServer] Socket %ld : Empty message received. Ignoring message.", clientSocket);
+                        DEBUG_PRINT("[WebSocketServer] Socket %llu : Empty message received. Ignoring message.", static_cast<ui64>(clientSocket));
                         continue;
                     }
 
                     if (!mask) {
-                        DEBUG_PRINT("[WebSocketServer] Socket %ld : Mask bit not set. Ignoring message.", clientSocket);
+                        DEBUG_PRINT("[WebSocketServer] Socket %llu : Mask bit not set. Ignoring message.", static_cast<ui64>(clientSocket));
                         continue;
 				    }
 

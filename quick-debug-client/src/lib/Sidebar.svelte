@@ -1,9 +1,28 @@
 <script lang="ts">
-    import { flip } from "svelte/animate";
 	import Input from "./Input.svelte";
 	import { ConnectionState, IpData, Settings } from "./entities";
-    import { chartContext, freezePlotting, messageStore, trackedIps } from "./store";
-    import { EZoomState, FastLineRenderableSeries, NumberRange, XyDataSeries } from "scichart";
+	import { IpDataStore, chartContext, freezePlotting, messageStore, ipDataStore } from "./store";
+
+	const {
+		SciChartSurface,
+		SciChartDefaults,
+		chartBuilder,
+		SciChartJsNavyTheme,
+		XyDataSeries,
+		FastLineRenderableSeries,
+		NumericAxis,
+		MouseWheelZoomModifier,
+		RubberBandXyZoomModifier,
+		ZoomExtentsModifier,
+		RolloverModifier,
+		LegendModifier,
+		ZoomPanModifier,
+		EZoomState,
+		NumberRange,
+		EExecuteOn
+	} = SciChart;
+
+
 
 	let ipInputField: Input;
 	let input: string;
@@ -27,15 +46,14 @@
 
 		ipInputField.clearError();
 		let data = new IpData(ip, false, ConnectionState.Disconnected);
-		trackedIps.update(x => [...x, data]);
+		ipDataStore.addIp(data);
 		connectWebSocket(data);
 	}
 
 	function connectWebSocket(data: IpData) {
 		console.log("Connecting to " + data.IpAddress);
 		data.ConnectionState = ConnectionState.Connecting
-		// trackedIps = trackedIps;
-		trackedIps.update(x => x);
+		ipDataStore.update();
 
 		// if (data.Socket) 
 		// 	data.Socket.close();
@@ -47,15 +65,20 @@
 		data.Socket.onopen = function () {
 			console.log("Connected to " + data.IpAddress);
 			data.ConnectionState = ConnectionState.Connected;
-			trackedIps.update(x => x);
-
+			ipDataStore.update();
 		};
 
 		data.Socket.onerror = function () {
 			console.log("Error while connecting to " + data.IpAddress);
 			data.ConnectionState = ConnectionState.Disconnected;
-			trackedIps.update(x => x);
+			ipDataStore.update();
 		};
+		
+		data.Socket.onclose = function() {
+			console.log("Connection closed: " + data.IpAddress);
+			data.ConnectionState = ConnectionState.Disconnected;
+			ipDataStore.update();
+		}
 
 		const maxPoints = 100;
 		let i = 0;
@@ -65,19 +88,24 @@
 			const field = data[0];
 			const value = data[1] * 1;
 
-			if (freezePlotting)
+			if ($freezePlotting)
 				return;
-			console.log("Received: " + field + " = " + value);
-
-			if ($chartContext == null) {
+			if ($chartContext == null || $chartContext.ChartSurface == null || $chartContext.WasmContext == null) {
 				console.log("Chart context is null");
 				return;
 			}
 
 			const sciChartSurface = $chartContext.ChartSurface;
 			if (!$messageStore.has(field)) {
+				console.log($chartContext.WasmContext)
+				var series = new XyDataSeries($chartContext.WasmContext, {
+					dataSeriesName: field
+				}) 
 				messageStore.update((x) => {
-					x.set(field, new XyDataSeries($chartContext?.WasmContext));
+					x.set(
+						field,
+						series 
+					);
 					return x;
 				});
 				sciChartSurface.renderableSeries.add(
@@ -117,7 +145,7 @@
 	<div class="divider no-margin"></div>
 
 	<div class="margin">
-		{#each $trackedIps as ipData}
+		{#each $ipDataStore as ipData}
 			<div
 				class="row primary-border border small-round small-padding context-menu"
 			>

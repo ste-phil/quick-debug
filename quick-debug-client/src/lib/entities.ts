@@ -6,11 +6,11 @@ export class IpData {
     constructor(
         public IpAddress: string, 
         public IsEnabled: boolean,
-        public ConnectionState: ConnectionState) {
-        }
-    }
+        public ConnectionState: ConnectionState) 
+    { };
+}
 
-    export enum ConnectionState {
+export enum ConnectionState {
     Disconnected = 0,
     Connecting = 1,
     Connected = 2
@@ -29,6 +29,3 @@ export class ChartContext {
 export abstract class Settings {
     public static Port: number = 8126;
 }
-
-
-
