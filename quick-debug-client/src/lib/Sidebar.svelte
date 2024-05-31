@@ -86,7 +86,9 @@
 			const message = event.data;
 			const data = message.split(";");
 			const field = data[0];
-			const value = data[1] * 1;
+			const value = parseFloat(data[1]);
+			if (!(!isNaN(value) && isFinite(value)))
+				return;
 
 			if ($freezePlotting)
 				return;

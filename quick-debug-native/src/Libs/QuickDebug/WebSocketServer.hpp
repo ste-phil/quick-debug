@@ -1,6 +1,7 @@
 #ifndef WEBSOCKET_SERVER_HPP
 #define WEBSOCKET_SERVER_HPP
 
+
 #include <iostream>
 #include <thread>
 #include <atomic>
@@ -35,7 +36,7 @@ namespace Ext {
         void Start(int port) {
             if (m_isRunning)
                 throw "Server is already running!";
-            
+
             m_port = port;
             m_isRunning = true;
             m_serverThread = std::thread(&WebSocketServer::ServerLoop, this);
@@ -58,7 +59,7 @@ namespace Ext {
         }
 
         void SendMessage(SOCKET clientSocket, const std::string& message) {
-			
+
             struct ControlData {
 			    unsigned char opcode            : 4;
 			    unsigned char rsv3              : 1;
@@ -187,7 +188,7 @@ namespace Ext {
             return true; // Socket is connected
         }
 
-       
+
         void ClientLoop(SOCKET clientSocket) {
             char buffer[4096] = { 0 };
             int bytesRead;
@@ -216,7 +217,7 @@ namespace Ext {
                         // bytes are reversed because websocket will print them in Big-Endian, whereas
                         // BitConverter will want them arranged in little-endian on windows
                         char msgLengthReversed[2] = { buffer[3], buffer[2] };
-                            
+
                         msglen = *(uint16_t*)(msgLengthReversed);
                         offset = 4;
                     }
@@ -342,7 +343,7 @@ namespace Ext {
         std::string ComputeWebSocketSecKey(const std::string& secWebSocketKey) {
             // Concatenate the Sec-WebSocket-Key with the special GUID
             std::string concatKey = secWebSocketKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-           
+
             // Compute SHA-1 hash
             Chocobo1::SHA1 sha1;
             sha1.toArray();
