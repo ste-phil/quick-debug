@@ -374,7 +374,8 @@ namespace SHA1_NS
 
 		const auto digest = toArray();
 		T ret = 0;
-		for (int i = 0, iMax = static_cast<int>(std::min(sizeof(T), digest.size())); i < iMax; ++i)
+		int iMax = static_cast<int>(std::min(sizeof(T), digest.size()));
+		for (int i = 0; i < iMax; ++i)
 		{
 			ret <<= 8;
 			ret |= digest[i];

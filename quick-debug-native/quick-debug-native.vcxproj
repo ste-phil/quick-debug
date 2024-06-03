@@ -18,37 +18,89 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Libs\Analysis.h" />
+    <ClInclude Include="Libs\QuickDebug\Common.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Common\ConcurrentQueue.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Common\Dbg.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Common\FixedString.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Common\Types.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Content\index.html.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\blake1_224.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\blake1_256.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\blake1_384.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\blake1_512.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\blake2.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\blake2s.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\crc_32.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\cshake.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\fnv.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\has_160.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\md2.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\md4.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\md5.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\ripemd_128.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\ripemd_160.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\ripemd_256.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\ripemd_320.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sha1.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sha2_224.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sha2_256.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sha2_384.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sha2_512.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sha2_512_224.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sha2_512_256.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sha3.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\siphash.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\sm3.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\tiger.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\tuple_hash.h" />
+    <ClInclude Include="Libs\QuickDebug\Hash\whirlpool.h" />
+    <ClInclude Include="Libs\QuickDebug\httplib.h" />
+    <ClInclude Include="Libs\QuickDebug\QuickDebug.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Sockets.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Sockets\SocketCompat.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Sockets\Tcp.hpp" />
+    <ClInclude Include="Libs\QuickDebug\Sockets\TcpServer.hpp" />
+    <ClInclude Include="Libs\QuickDebug\WebSocketServer.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Libs\QuickDebug\Content\index.html" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{c19a34d6-628c-4f0b-8cb4-0cd944b6875f}</ProjectGuid>
-    <RootNamespace>DebugCharting</RootNamespace>
+    <ProjectGuid>{b05f49ca-2af3-43b6-98ab-62b6e8fde07e}</ProjectGuid>
+    <RootNamespace>quickdebugnative</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -70,18 +122,6 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(MSBuildProjectDirectory)\src</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(MSBuildProjectDirectory)\src</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(MSBuildProjectDirectory)\src</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(MSBuildProjectDirectory)\src</IncludePath>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -116,7 +156,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -142,55 +182,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="src\Content\index.html.h" />
-    <ClInclude Include="src\Libs\Ext\Common.hpp" />
-    <ClInclude Include="src\Libs\Ext\Common\Dbg.hpp" />
-    <ClInclude Include="src\Libs\Ext\Common\Types.hpp" />
-    <ClInclude Include="src\Libs\Ext\RemoteDebug.hpp" />
-    <ClInclude Include="src\Libs\Ext\Sockets.hpp" />
-    <ClInclude Include="src\Libs\Ext\Sockets\SocketCompat.hpp" />
-    <ClInclude Include="src\Libs\Ext\Sockets\Tcp.hpp" />
-    <ClInclude Include="src\Libs\Ext\Sockets\TcpServer.hpp" />
-    <ClInclude Include="src\Libs\Ext\Hash\blake1_224.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\blake1_256.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\blake1_384.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\blake1_512.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\blake2.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\blake2s.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\crc_32.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\cshake.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\fnv.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\has_160.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\md2.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\md4.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\md5.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\ripemd_128.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\ripemd_160.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\ripemd_256.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\ripemd_320.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sha1.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sha2_224.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sha2_256.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sha2_384.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sha2_512.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sha2_512_224.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sha2_512_256.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sha3.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\siphash.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\sm3.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\tiger.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\tuple_hash.h" />
-    <ClInclude Include="src\Libs\Ext\Hash\whirlpool.h" />
-    <ClInclude Include="src\Libs\httplib.h" />
-    <ClInclude Include="src\Libs\Ext\WebSocketServer.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\Content\index.html" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -41,7 +41,7 @@
   <nav>
     <div class="large-space"></div>
 
-    <div class="row padding-small no-space small-margin">
+    <div class="row no-padding no-space small-margin">
       <div class="field label left-round border small" style="min-width: 200px;">
         <select>
           <option>Item 1</option>

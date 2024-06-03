@@ -16,22 +16,39 @@ struct QuickDebugConfig {
 };
 
 struct QuickDebugData {
-	FixedString<32> graph;
-	float value;
+	const char* graph;
+	const float value;
+
+	QuickDebugData(const char* g, const float v):
+		graph(g),
+		value(v)
+	{
+
+	}
 };
 
 struct QuickDebug {
 	static const int WEBSERVER_PORT = 80;
 	static const int WEBSOCKETSERVER_PORT = 8126;
 
-	static inline void Plot(const std::string& graph, float value) {
-		std::lock_guard<std::mutex> lock(counter_mutex);
-
+	static inline void PlotAndSend(const std::string& graph, float value) {
 		if (!IsRunning())
 			Startup();
 
 		// Send message to clients
 		m_server.BroadcastMessage(graph + ";" + std::to_string(value));
+	}
+
+	static inline void Plot(const std::string& graph, float value) {
+		Plot(graph.c_str(), value);
+	}
+
+	static inline void Plot(const char* graph, float value) {
+		if (!IsRunning())
+			Startup();
+
+		QuickDebugData data(graph, value);
+		m_messageQueue.Push(data);
 	}
 
 	/// @brief This has to be called before the first QuickDebug::Plot() is called, to be able to take effect.
@@ -49,23 +66,15 @@ struct QuickDebug {
 		m_cfg = cfg;
 
 		m_server.Start(WEBSOCKETSERVER_PORT);
-		m_messageQueue = std::queue<QuickDebugData>();
 		m_publishPlotMessageThread = std::thread([&]() {
 			while (m_server.IsRunning())
 			{
-				{
-					std::lock_guard<std::mutex> lock(counter_mutex);
-					for (int i = 0; i < m_messageQueue.size(); i++) {
-						auto data = m_messageQueue.front();
-						m_messageQueue.pop();
+				for (int i = 0; i < m_messageQueue.Size(); i++) {
+					auto data = m_messageQueue.Pop();
 
-						std::string graphMsg = data.graph;
-						std::string msg = graphMsg + ";" + std::to_string(data.value);
-						m_server.BroadcastMessage(msg);
-					}
+					std::string msg = std::string(data.graph) + ";" + std::to_string(data.value);
+					m_server.BroadcastMessage(msg);
 				}
-
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			}
 		});
 		m_publishPlotMessageThread.detach();
@@ -99,12 +108,11 @@ private:
 		svr.listen("0.0.0.0", 80);
 	}
 
-	static inline std::queue<QuickDebugData> m_messageQueue;
+	static inline ConcurrentQueue<QuickDebugData> m_messageQueue;
 	static inline std::thread m_publishPlotMessageThread;
 
 	static inline std::thread m_webServerThread;
 	static inline QuickDebugConfig m_cfg;
-	static inline std::mutex counter_mutex;
 
 	static inline Ext::WebSocketServer m_server;
 };
