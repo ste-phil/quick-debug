@@ -128,62 +128,60 @@
 	}
 </script>
 
-<div class="surface-container-low max">
-	<div class="row padding padding-small no-space small-margin">
-		<Input
-			bind:this={ipInputField}
-			bind:input
-			classes="max left-round border small"
-			on:submit={addIp}
-		/>
-		<button
-			class="small-round no-padding no-margin right-round small-round"
-			on:click={addIp}
+<div class="row top-padding left-padding right-padding no-space no-margin">
+	<Input
+		bind:this={ipInputField}
+		bind:input
+		classes="max left-round border small"
+		on:submit={addIp}
+	/>
+	<button
+		class="small-round no-padding no-margin right-round small-round"
+		on:click={addIp}
+	>
+		<i>add</i>
+	</button>
+</div>
+
+<div class="divider no-margin"></div>
+
+<div class="left-margin right-margin responsive">
+	{#each $ipDataStore as ipData}
+		<div
+			class="row primary-border border small-round small-padding context-menu"
 		>
-			<i>add</i>
-		</button>
-	</div>
-
-	<div class="divider no-margin"></div>
-
-	<div class="margin">
-		{#each $ipDataStore as ipData}
-			<div
-				class="row primary-border border small-round small-padding context-menu"
-			>
-				<label class="checkbox">
-					<input
-						type="checkbox"
-						bind:checked={ipData.IsEnabled}
-						id="x"
-					/>
-					<span></span>
-				</label>
-				<p class="max large-text" id="ip-address">
-					{ipData.IpAddress}
-				</p>
-				{#if ipData.ConnectionState == ConnectionState.Connected}
-					<div>
-						<i>power</i>
-					</div>
-				{:else if ipData.ConnectionState == ConnectionState.Connecting}
-					<div>
-						<i class="spin">refresh</i>
-					</div>
-				{:else if ipData.ConnectionState == ConnectionState.Disconnected}
-					<div
-						on:click={() => connectWebSocket(ipData)}
-						on:keypress={() => {}}
-						role="button"
-						tabindex="0"
-					>
-						<i style="color: red">power_off</i>
-						<div class="tooltip">Reconnect</div>
-					</div>
-				{/if}
-			</div>
-		{/each}
-	</div>
+			<label class="checkbox">
+				<input
+					type="checkbox"
+					bind:checked={ipData.IsEnabled}
+					id="x"
+				/>
+				<span></span>
+			</label>
+			<p class="max large-text" id="ip-address">
+				{ipData.IpAddress}
+			</p>
+			{#if ipData.ConnectionState == ConnectionState.Connected}
+				<div>
+					<i>power</i>
+				</div>
+			{:else if ipData.ConnectionState == ConnectionState.Connecting}
+				<div>
+					<i class="spin">refresh</i>
+				</div>
+			{:else if ipData.ConnectionState == ConnectionState.Disconnected}
+				<div
+					on:click={() => connectWebSocket(ipData)}
+					on:keypress={() => {}}
+					role="button"
+					tabindex="0"
+				>
+					<i style="color: red">power_off</i>
+					<div class="tooltip">Reconnect</div>
+				</div>
+			{/if}
+		</div>
+	{/each}
 </div>
 
 <style>

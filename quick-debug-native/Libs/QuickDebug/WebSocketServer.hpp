@@ -40,6 +40,7 @@ namespace Ext {
             m_port = port;
             m_isRunning = true;
             m_serverThread = std::thread(&WebSocketServer::ServerLoop, this);
+            m_serverThread.detach();
         }
 
         void Stop() {
@@ -157,21 +158,33 @@ namespace Ext {
             }
             DEBUG_PRINT("[WebSocketServer] Listening on port %d\r\n", m_port);
 
+
             while (m_isRunning) {
-                SOCKET clientSocket = accept(listenSocket, nullptr, nullptr);
-                if (clientSocket == INVALID_SOCKET) {
-                    closesocket(listenSocket);
-                    throw "[WebSocketServer] Incoming connection accept failed: " + WSAGetLastError();
+                fd_set readfds;
+                FD_ZERO(&readfds);
+                FD_SET(listenSocket, &readfds);
+
+                timeval timeout;
+                timeout.tv_sec = 1;
+                timeout.tv_usec = 0;
+
+                result_val = select(0, &readfds, nullptr, nullptr, &timeout);
+                if (result_val > 0 && FD_ISSET(listenSocket, &readfds)) {
+                    SOCKET clientSocket = accept(listenSocket, nullptr, nullptr);
+                    if (clientSocket == INVALID_SOCKET) {
+                        closesocket(listenSocket);
+                        throw "[WebSocketServer] Incoming connection accept failed: " + std::to_string(WSAGetLastError());
+                    }
+                    DEBUG_PRINT("[WebSocketServer] Client connected on port %d\r\n", m_port);
+
+                    ClientConnection client;
+                    client.Thread = std::thread(&WebSocketServer::ClientLoop, this, clientSocket);
+                    client.Thread.detach(); // Detach the thread, let it run freely
+
+                    client.Socket = clientSocket;
+
+                    m_activeClients.push_back(std::move(client));
                 }
-                DEBUG_PRINT("[WebSocketServer] Client connected %d\r\n", m_port);
-
-                ClientConnection client;
-                client.Thread = std::thread(&WebSocketServer::ClientLoop, this, clientSocket);
-                client.Thread.detach(); // Detach the thread, let it run freely
-
-                client.Socket = clientSocket;
-
-                m_activeClients.push_back(std::move(client));
             }
 
             closesocket(listenSocket);
