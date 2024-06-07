@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Input from "./Input.svelte";
 	import { ConnectionState, IpData, Settings } from "./entities";
-	import { IpDataStore, chartContext, freezePlotting, messageStore, ipDataStore } from "./store";
+	import { IpDataStore, chartContext, freezePlotting, messageStore, ipDataStore, plottingInterval } from "./store";
 
 	const {
 		SciChartSurface,
@@ -19,13 +19,31 @@
 		ZoomPanModifier,
 		EZoomState,
 		NumberRange,
-		EExecuteOn
+		EExecuteOn,
+		AUTO_COLOR
 	} = SciChart;
 
 
-
+	let colorIdx = 0;
 	let ipInputField: Input;
 	let input: string;
+
+	const colorMap = [
+		"#00FF00",
+		"#0000FF",
+		"#FF00FF",
+		"#00FFFF",
+		"#FFFF00",
+		"#6600FF",
+		"#FF6600",
+		"#FF0000",
+		"#00FF00",
+		"#0000FF",
+		"#FF00FF",
+		"#00FFFF",
+		"#FFFF00",
+		"#6600FF",
+	];
 
 	function isIpValid(ipaddress: string) {
 		if (ipaddress.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/)) {
@@ -80,7 +98,7 @@
 			ipDataStore.update();
 		}
 
-		const maxPoints = 100;
+		const maxPoints = $plottingInterval;
 		let i = 0;
 		data.Socket.onmessage = function (event) {
 			const message = event.data;
@@ -101,7 +119,8 @@
 			if (!$messageStore.has(field)) {
 				console.log($chartContext.WasmContext)
 				var series = new XyDataSeries($chartContext.WasmContext, {
-					dataSeriesName: field
+					dataSeriesName: field,
+					fifoCapacity: maxPoints
 				}) 
 				messageStore.update((x) => {
 					x.set(
@@ -112,7 +131,8 @@
 				});
 				sciChartSurface.renderableSeries.add(
 					new FastLineRenderableSeries($chartContext.WasmContext, {
-						strokeThickness: 3,
+						stroke: colorMap[colorIdx++ % colorMap.length],
+						strokeThickness: 5,
 						dataSeries: $messageStore.get(field)
 					})
 				);
@@ -123,7 +143,8 @@
 				sciChartSurface.xAxes.items[0].visibleRange = new NumberRange(i - maxPoints, i);
 			}
 
-			$messageStore.get(field).append(i++, value);
+			const dataSeries = $messageStore.get(field);
+			dataSeries.append(i++, value);
 		};
 	}
 </script>

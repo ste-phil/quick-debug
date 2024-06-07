@@ -2,7 +2,7 @@
   import Sidebar from './lib/Sidebar.svelte'
   import Chart from './lib/Chart.svelte'
   import ContextMenu from './lib/ContextMenu.svelte';
-  import { freezePlotting, darkMode } from './lib/store';
+  import { freezePlotting, darkMode, plottingInterval } from './lib/store';
   import { onMount } from 'svelte';
 
   function onKeyPressed(e: KeyboardEvent) {
@@ -60,11 +60,22 @@
       </button>
     </div>
 
-
     <div class="max"></div>
+
     <button class="circle transparent" on:click={onChangeColorMode}>
       <i>{$darkMode ? "light_mode" : "dark_mode"}</i>
     </button>
+    <div class="field label small-round border small" style="min-width: 200px;" >
+      <select bind:value={$plottingInterval}>
+        <option id="100">100</option>
+        <option id="200">200</option>
+        <option id="400">400</option>
+      </select>
+      <label>Points to display</label>
+      <i>arrow_drop_down</i>
+    </div>    
+    
+    
     <button class="circle transparent" on:click={() => {freezePlotting.set(!$freezePlotting)}}>
       <i>{$freezePlotting ? "play_arrow" : "pause"}</i>
     </button>

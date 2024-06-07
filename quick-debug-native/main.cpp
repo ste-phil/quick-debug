@@ -30,7 +30,7 @@ int main()
 			Sleep(MSG_DELAY_MS);
 		}
 	}).detach();
-
+	
 	std::thread([]() {
 		const int MSG_DELAY_MS = 16;
 		float i = 0;
@@ -44,16 +44,16 @@ int main()
 			Sleep(MSG_DELAY_MS);
 		}
 	}).detach();
-
+	
 	std::thread([]() {
 		const int MSG_DELAY_MS = 16;
 		float i = 0;
 		while (true) {
-			auto val = std::acos(i++ * MSG_DELAY_MS * 0.005);
+			auto val = 2 * std::sin(i++ * MSG_DELAY_MS * 0.005);
 			// std::cout << "Sending message: " << val << std::endl;
 			{
 				Timer("acos");
-				QuickDebug::Plot("acos", val);
+				QuickDebug::Plot("2sin", val);
 			}
 			Sleep(MSG_DELAY_MS);
 		}
