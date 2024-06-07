@@ -69,9 +69,8 @@ export class IpDataStore {
 
 
 export const ipDataStore: IpDataStore = new IpDataStore()
-export const configMessages: Writable<ConfigMessage[]> = UseLocalStorage2("config-messages", [
-    new ConfigMessage("1", "asdasd"),
-    new ConfigMessage("2", "yxcyxc"),
+export const configMessages: Writable<ConfigMessage[]> = UseLocalStorage("config-messages", [
+    new ConfigMessage("Bitrate", "8000"),
 ]);
 
 export const freezePlotting = writable(false);
