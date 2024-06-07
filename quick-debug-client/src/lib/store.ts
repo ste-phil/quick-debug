@@ -72,6 +72,7 @@ export const ipDataStore: IpDataStore = new IpDataStore()
 export const configMessages: Writable<ConfigMessage[]> = UseLocalStorage("config-messages", [
     new ConfigMessage("Bitrate", "8000"),
 ]);
+export const configKeys: Writable<string[]> = writable([]);
 
 export const freezePlotting = writable(false);
 export const darkMode = UseLocalStorage("dark-mode", true);

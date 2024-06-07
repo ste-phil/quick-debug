@@ -15,49 +15,59 @@ int main()
 	QuickDebug::Startup({
 		.UseWebserver = false
 	});
-	
 
-	std::thread([]() {
+
+	f32 amplitude = 1;
+	FixedString<32> text = "Default text";
+	i32 offset = 0;
+	QuickDebug::RegisterRecvKey("Amplitude", amplitude);
+	QuickDebug::RegisterRecvKey("Text", text);
+	QuickDebug::RegisterRecvKey("Offset", offset);
+ 
+	std::thread([&]() {
 		const int MSG_DELAY_MS = 16;
-		float i = 0;
+		i32 i = 0;
 		while (true) {
-			auto val = std::sin(i++ * MSG_DELAY_MS * 0.005);
+			auto val = std::sin((offset + i++) * MSG_DELAY_MS * 0.005);
 			// std::cout << "Sending message: " << val << std::endl;
 			{
-				Timer("sin");
+				// Timer("sin");
 				QuickDebug::Plot("sin", val);
 			}
 			Sleep(MSG_DELAY_MS);
 		}
 	}).detach();
 	
-	std::thread([]() {
+	std::thread([&]() {
 		const int MSG_DELAY_MS = 16;
-		float i = 0;
+		i32 i = 0;
 		while (true) {
-			auto val = std::cos(i++ * MSG_DELAY_MS * 0.005);
+			auto val = amplitude * std::cos((i++) * MSG_DELAY_MS * 0.005);
 			// std::cout << "Sending message: " << val << std::endl;
 			{
-				Timer("cos");
+				// Timer("cos");
 				QuickDebug::Plot("cos", val);
 			}
+
+			// std::cout << text << std::endl;
 			Sleep(MSG_DELAY_MS);
 		}
+
 	}).detach();
 	
-	std::thread([]() {
-		const int MSG_DELAY_MS = 16;
-		float i = 0;
-		while (true) {
-			auto val = 2 * std::sin(i++ * MSG_DELAY_MS * 0.005);
-			// std::cout << "Sending message: " << val << std::endl;
-			{
-				Timer("acos");
-				QuickDebug::Plot("2sin", val);
-			}
-			Sleep(MSG_DELAY_MS);
-		}
-	}).detach();
+	// std::thread([&]() {
+	// 	const int MSG_DELAY_MS = 16;
+	// 	i32 i = 0;
+	// 	while (true) {
+	// 		auto val = 2 * std::sin((offset + i++) * MSG_DELAY_MS * 0.005);
+	// 		// std::cout << "Sending message: " << val << std::endl;
+	// 		{
+	// 			Timer("acos");
+	// 			QuickDebug::Plot("2sin", val);
+	// 		}
+	// 		Sleep(MSG_DELAY_MS);
+	// 	}
+	// }).detach();
 
 	auto x = std::cin.get();
 }

@@ -46,7 +46,7 @@
   <nav>
     <div class="large-space"></div>
 
-    <div class="row no-padding no-space small-margin">
+    <!-- <div class="row no-padding no-space small-margin">
       <div class="field label left-round border small" style="min-width: 200px;">
         <select>
           <option>Item 1</option>
@@ -63,7 +63,7 @@
       <button class="circle transparent">
         <i>download</i>
       </button>
-    </div>
+    </div> -->
 
     <div class="max"></div>
 

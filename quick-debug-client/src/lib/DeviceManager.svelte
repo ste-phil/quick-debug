@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Input from "./Input.svelte";
 	import { ConnectionState, IpData, Settings } from "./entities";
-	import { IpDataStore, chartContext, freezePlotting, messageStore, ipDataStore, plottingInterval } from "./store";
+	import { IpDataStore, chartContext, freezePlotting, messageStore, ipDataStore, plottingInterval, configKeys } from "./store";
 
 	const {
 		SciChartSurface,
@@ -45,6 +45,8 @@
 		"#6600FF",
 	];
 
+	const maxPoints = $plottingInterval;
+
 	function isIpValid(ipaddress: string) {
 		if (ipaddress.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/)) {
 			return true;
@@ -67,6 +69,7 @@
 		ipDataStore.addIp(data);
 		connectWebSocket(data);
 	}
+
 
 	function connectWebSocket(data: IpData) {
 		console.log("Connecting to " + data.IpAddress);
@@ -98,54 +101,82 @@
 			ipDataStore.update();
 		}
 
-		const maxPoints = $plottingInterval;
-		let i = 0;
+		enum MessageType {
+			Plot = "1",
+			ConfigurationVariables = "2",
+		}
+
+		const messageCounter = { value: 0 };
 		data.Socket.onmessage = function (event) {
 			const message = event.data;
 			const data = message.split(";");
-			const field = data[0];
-			const value = parseFloat(data[1]);
-			if (!(!isNaN(value) && isFinite(value)))
-				return;
+			const messageType = data[0];
 
-			if ($freezePlotting)
-				return;
-			if ($chartContext == null || $chartContext.ChartSurface == null || $chartContext.WasmContext == null) {
-				console.log("Chart context is null");
-				return;
-			}
-
-			const sciChartSurface = $chartContext.ChartSurface;
-			if (!$messageStore.has(field)) {
-				console.log($chartContext.WasmContext)
-				var series = new XyDataSeries($chartContext.WasmContext, {
-					dataSeriesName: field,
-					fifoCapacity: maxPoints
-				}) 
-				messageStore.update((x) => {
-					x.set(
-						field,
-						series 
-					);
-					return x;
-				});
-				sciChartSurface.renderableSeries.add(
-					new FastLineRenderableSeries($chartContext.WasmContext, {
-						stroke: colorMap[colorIdx++ % colorMap.length],
-						strokeThickness: 5,
-						dataSeries: $messageStore.get(field)
-					})
-				);
-			}
-
-			sciChartSurface.zoomExtentsY();
-			if (sciChartSurface.zoomState !== EZoomState.UserZooming) {
-				sciChartSurface.xAxes.items[0].visibleRange = new NumberRange(i - maxPoints, i);
-			}
-
-			const dataSeries = $messageStore.get(field);
-			dataSeries.append(i++, value);
+			if (messageType === MessageType.Plot)
+				processPlotMessage(data, messageCounter);
+			else if (messageType === MessageType.ConfigurationVariables)
+				processsConfigMessage(data);
 		};
+	}
+
+	
+	function processPlotMessage(data: string[], messageCounter: any) {
+		const field = data[1];
+		const value = parseFloat(data[2]);
+		if (!(!isNaN(value) && isFinite(value)))
+			return;
+
+		if ($freezePlotting)
+			return;
+		if ($chartContext == null || $chartContext.ChartSurface == null || $chartContext.WasmContext == null) {
+			console.log("Chart context is null");
+			return;
+		}
+
+		const sciChartSurface = $chartContext.ChartSurface;
+		if (!$messageStore.has(field)) {
+			console.log($chartContext.WasmContext)
+			var series = new XyDataSeries($chartContext.WasmContext, {
+				dataSeriesName: field,
+				fifoCapacity: maxPoints,
+				isSorted: true,
+				containsNaN: false,
+			}) 
+			messageStore.update((x) => {
+				x.set(
+					field,
+					series 
+				);
+				return x;
+			});
+			sciChartSurface.renderableSeries.add(
+				new FastLineRenderableSeries($chartContext.WasmContext, {
+					stroke: colorMap[colorIdx++ % colorMap.length],
+					strokeThickness: 5,
+					dataSeries: $messageStore.get(field),
+					
+				})
+			);
+		}
+
+		sciChartSurface.zoomExtentsY();
+		if (sciChartSurface.zoomState !== EZoomState.UserZooming) {
+			sciChartSurface.xAxes.items[0].visibleRange = new NumberRange(messageCounter.value - maxPoints, messageCounter.value);
+		}
+
+		const dataSeries = $messageStore.get(field);
+		dataSeries.append(messageCounter.value++, value);
+	}
+
+	function processsConfigMessage(data: string[]) {
+		console.log("Available configuration variables:")
+		for (let i = 1; i < data.length; i++) {
+			const variable = data[i];
+
+			configKeys.set([...$configKeys, variable]);
+		}
+
+		console.log($configKeys)
 	}
 </script>
 
@@ -171,15 +202,15 @@
 		<div
 			class="row primary-border border small-round small-padding context-menu"
 		>
-			<label class="checkbox">
+			<!-- <label class="checkbox">
 				<input
 					type="checkbox"
 					bind:checked={ipData.IsEnabled}
 					id="x"
 				/>
 				<span></span>
-			</label>
-			<p class="max large-text" id="ip-address">
+			</label> -->
+			<p class="max large-text left-margin" id="ip-address">
 				{ipData.IpAddress}
 			</p>
 			{#if ipData.ConnectionState == ConnectionState.Connected}

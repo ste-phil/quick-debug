@@ -59,8 +59,11 @@ namespace Ext {
             m_messageHandler = std::move(handler);
         }
 
-        void SendMessage(SOCKET clientSocket, const std::string& message) {
+        void SetClientConnectedHandler(std::function<void(SOCKET)> handler) {
+            m_onClientConnectedHandler = std::move(handler);
+        }
 
+        void SendWebMessage(SOCKET clientSocket, const std::string& message) {
             struct ControlData {
 			    unsigned char opcode            : 4;
 			    unsigned char rsv3              : 1;
@@ -103,7 +106,7 @@ namespace Ext {
 
         void BroadcastMessage(const std::string& message) {
             for (auto& client : m_activeClients) {
-				SendMessage(client.Socket, message);
+				SendWebMessage(client.Socket, message);
 			}
         }
 
@@ -196,7 +199,10 @@ namespace Ext {
             if (result == SOCKET_ERROR) {
                 int error = WSAGetLastError();
                 if (error == WSAEWOULDBLOCK || error == WSAECONNRESET || error == WSAECONNABORTED)
+                {
+                    DEBUG_PRINT("[WebSocketServer] Socket socket closing, Error: %d \n", error);
                     return false; // Socket is not connected
+                }
             }
             return true; // Socket is connected
         }
@@ -208,8 +214,8 @@ namespace Ext {
             bool connectionEstablished = false;
 
             while (m_isRunning) {
-                if (IsSocketConnected(clientSocket) == false) {
-					DEBUG_PRINT("[WebSocketServer] Socket %llu : Connection closed.", static_cast<ui64>(clientSocket));
+                if (!IsSocketConnected(clientSocket)) {
+					DEBUG_PRINT("[WebSocketServer] Socket %llu: Connection closed. \n", static_cast<ui64>(clientSocket));
 					break;
 				}
 
@@ -217,6 +223,9 @@ namespace Ext {
                     if (!connectionEstablished) {
                         NegotiateConnection(clientSocket, buffer, bytesRead);
                         connectionEstablished = true;
+                        
+                        if (m_onClientConnectedHandler)
+                            m_onClientConnectedHandler(clientSocket);
                         continue;
                     }
 
@@ -270,11 +279,24 @@ namespace Ext {
                     delete[] decoded;
                 }
             }
-
+            
+            DEBUG_PRINT("[WebSocketServer] Socket %llu: Cleaning up data\n", static_cast<ui64>(clientSocket));
+            
             m_activeClients.erase(std::remove_if(m_activeClients.begin(), m_activeClients.end(), [clientSocket](const ClientConnection& client) {
 				return client.Socket == clientSocket;
 			}), m_activeClients.end());
-            closesocket(clientSocket);
+
+            DEBUG_PRINT("[WebSocketServer] Active clients: %d\n", m_activeClients.size());
+            
+            auto result = shutdown(clientSocket, SD_BOTH);
+            if (result == SOCKET_ERROR) {
+                DEBUG_PRINT("[WebSocketServer] Socket %llu: shutdown failed\n", static_cast<ui64>(clientSocket));
+            }
+
+            result = closesocket(clientSocket);
+            if (result == SOCKET_ERROR) {
+                DEBUG_PRINT("[WebSocketServer] Socket %llu: closesocket failed\n", static_cast<ui64>(clientSocket));
+            }
         }
 
         #pragma region MessageNegotiation
@@ -382,6 +404,7 @@ namespace Ext {
         std::vector<ClientConnection> m_activeClients;
 
         std::function<void(SOCKET, const std::string&)> m_messageHandler;
+        std::function<void(SOCKET)> m_onClientConnectedHandler;
     };
 }
 

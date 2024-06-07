@@ -29,6 +29,7 @@
     <ClInclude Include="Libs\QuickDebug\Common\FixedString.hpp" />
     <ClInclude Include="Libs\QuickDebug\Common\Types.hpp" />
     <ClInclude Include="Libs\QuickDebug\Content\index.html.h" />
+    <ClInclude Include="Libs\QuickDebug\Entities.hpp" />
     <ClInclude Include="Libs\QuickDebug\Hash\blake1_224.h" />
     <ClInclude Include="Libs\QuickDebug\Hash\blake1_256.h" />
     <ClInclude Include="Libs\QuickDebug\Hash\blake1_384.h" />
