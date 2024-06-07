@@ -19,7 +19,7 @@ struct QuickDebugData {
 	const char* graph;
 	const float value;
 
-	QuickDebugData(const char* g, const float v):
+	QuickDebugData(const char* g, const float v) :
 		graph(g),
 		value(v)
 	{
@@ -32,8 +32,7 @@ struct QuickDebug {
 	static const int WEBSOCKETSERVER_PORT = 8126;
 
 	static inline void PlotAndSend(const std::string& graph, float value) {
-		if (!IsRunning())
-			Startup();
+		Startup();
 
 		// Send message to clients
 		m_server.BroadcastMessage(graph + ";" + std::to_string(value));
@@ -44,8 +43,7 @@ struct QuickDebug {
 	}
 
 	static inline void Plot(const char* graph, float value) {
-		if (!IsRunning())
-			Startup();
+		Startup();
 
 		QuickDebugData data(graph, value);
 		m_messageQueue.Push(data);
@@ -63,6 +61,9 @@ struct QuickDebug {
 	}
 
 	static inline void Startup(const QuickDebugConfig& cfg) {
+		if (IsRunning())
+			return;
+
 		m_cfg = cfg;
 
 		m_server.Start(WEBSOCKETSERVER_PORT);
@@ -76,22 +77,26 @@ struct QuickDebug {
 					m_server.BroadcastMessage(msg);
 				}
 			}
-		});
+			});
 		m_publishPlotMessageThread.detach();
 
 		if (m_cfg.UseWebserver) {
 			m_webServerThread = std::thread([]() {
 				InitWebServer();
-			});
+				});
 			m_webServerThread.detach();
 		}
 	}
 
-	//static inline void Shutdown() {
-	//	if (IsRunning()) {
-	//		m_server.Stop();
-	//	}
-	//}
+	static inline void Shutdown() {
+		if (IsRunning()) {
+			m_server.Stop();
+
+			m_publishPlotMessageThread.join();
+			m_webserver.stop();
+			m_webServerThread.join();
+		}
+	}
 
 private:
 	static inline bool IsRunning() {
@@ -99,19 +104,19 @@ private:
 	}
 
 	static inline void InitWebServer() {
-		httplib::Server svr;
-
-		svr.Get("/", [](const httplib::Request&, httplib::Response& res) {
+		m_webserver.Get("/", [](const httplib::Request&, httplib::Response& res) {
 			res.set_content(Content::index_html, "text/html");
-		});
+			});
 
-		svr.listen("0.0.0.0", 80);
+		m_webserver.listen("0.0.0.0", 80);
 	}
 
 	static inline ConcurrentQueue<QuickDebugData> m_messageQueue;
 	static inline std::thread m_publishPlotMessageThread;
 
 	static inline std::thread m_webServerThread;
+
+	static inline httplib::Server m_webserver;
 	static inline QuickDebugConfig m_cfg;
 
 	static inline Ext::WebSocketServer m_server;

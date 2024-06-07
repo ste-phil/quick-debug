@@ -1,5 +1,5 @@
 import { writable, type Writable } from "svelte/store";
-import { ChartContext, ConnectionState, IpData } from "./entities";
+import { ChartContext, ConfigMessage, ConnectionState, IpData } from "./entities";
 
 export class IpDataStore {
     private readonly trackedIps: Writable<IpData[]>;
@@ -58,10 +58,21 @@ export class IpDataStore {
     public Get(): Writable<IpData[]> {
         return this.trackedIps;
     }
+
+    public SendMessageToAll(msg: ConfigMessage) {
+        for(const e of this) {
+            if (e?.Socket?.send !== undefined)
+                e?.Socket?.send(`${msg.Key};${msg.Value}`)
+        }
+    }
 }
 
 
 export const ipDataStore: IpDataStore = new IpDataStore()
+export const configMessages: Writable<ConfigMessage[]> = UseLocalStorage2("config-messages", [
+    new ConfigMessage("1", "asdasd"),
+    new ConfigMessage("2", "yxcyxc"),
+]);
 
 export const freezePlotting = writable(false);
 export const darkMode = UseLocalStorage("dark-mode", true);

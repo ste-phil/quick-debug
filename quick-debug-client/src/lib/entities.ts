@@ -1,5 +1,14 @@
 import { writable, type Writable } from 'svelte/store';
 
+export class ConfigMessage {
+    constructor(
+        public Key: string, 
+        public Value: string,
+    ) {
+    }
+}
+
+
 export class IpData {
     public Socket: WebSocket | null = null;
     

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import Sidebar from './lib/Sidebar.svelte'
+  import DeviceMananger from './lib/DeviceManager.svelte'
+  import MessageManager from './lib/MessageManager.svelte';
   import Chart from './lib/Chart.svelte'
   import ContextMenu from './lib/ContextMenu.svelte';
   import { freezePlotting, darkMode, plottingInterval } from './lib/store';
@@ -32,7 +33,11 @@
 
 <svelte:window on:keypress={onKeyPressed} />
 <nav class="left drawer min no-margin no-padding">
-  <Sidebar></Sidebar>
+  <div class="surface-container-low row vertical max responsive">
+    <DeviceMananger></DeviceMananger>
+    <div class="max"></div>
+    <MessageManager></MessageManager>
+  </div>
 </nav>
 <main class="responsive">
   <Chart></Chart>

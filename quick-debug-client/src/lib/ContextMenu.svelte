@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ipDataStore } from "./store";
+    import { configMessages, ipDataStore } from "./store";
 
     // pos is cursor position when right click occur
     let pos = { x: 0, y: 0 }
@@ -76,6 +76,14 @@
             const ip = elem?.querySelector("#ip-address")?.textContent;
             if (ip) {
                 ipDataStore.removeIp(ip);
+            }
+
+            const configMessageIndex = Array.prototype.indexOf.call(elem?.parentNode?.childNodes, elem);
+            if (configMessageIndex) {
+                configMessages.update(x => {
+                    var removedElems = x.splice(configMessageIndex, 1);
+                    return x;
+                })
             }
         }),
     ]
