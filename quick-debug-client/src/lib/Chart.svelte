@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { chartContext, darkMode } from "./store";
+    import { chartContext, darkMode, chartManager } from "./store";
     import { ChartContext } from "./entities";
 
     const {
@@ -24,7 +24,7 @@
 		EExecuteOn,
 	} = SciChart;
 
-	
+    $: charts = chartManager.Charts;
 
     function createChartTheme(darkMode: boolean) {
         const customTheme = {
@@ -85,8 +85,7 @@
         return theme;
     }
 
-	async function initSciChartProgrammaticApi() {
-        SciChartSurface.UseCommunityLicense()
+	async function initChart() {
 
 		const { sciChartSurface, wasmContext } = await SciChartSurface.create(
 			"chart",
@@ -130,13 +129,18 @@
 	}
 
 	onMount(() => {
-		initSciChartProgrammaticApi();
+        SciChartSurface.UseCommunityLicense();
+		initChart();
+
+        chartManager.init();
 	});
 </script>
 
 <div>
-	<h1>Chart</h1>
-	<div id="chart" class="responsive"></div>
+    <div id="chart" class="responsive"></div>
+	{#each $charts as chart}
+        <p>Chart 1</p>
+    {/each}
 </div>
 
 <style>
