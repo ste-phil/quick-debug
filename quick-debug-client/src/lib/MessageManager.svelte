@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { ConfigMessage } from "./entities";
-    import { configKeys, configMessages, ipDataStore } from "./store";
+    import { ConfigMessage } from "./entities/Entities";
+    import { configKeys, configMessages, ipDataStore } from "./entities/Store";
 
 
     function addMessage(event: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement; }) {

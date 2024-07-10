@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { configMessages, ipDataStore } from "./store";
+    import { configMessages, ipDataStore } from "./entities/Store";
 
     // pos is cursor position when right click occur
     let pos = { x: 0, y: 0 }

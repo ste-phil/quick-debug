@@ -1,10 +1,15 @@
 <script lang="ts">
-  import DeviceMananger from './lib/DeviceManager.svelte'
-  import MessageManager from './lib/MessageManager.svelte';
-  import Chart from './lib/Chart.svelte'
-  import ContextMenu from './lib/ContextMenu.svelte';
-  import { freezePlotting, darkMode, plottingInterval } from './lib/store';
-  import { onMount } from 'svelte';
+  import DeviceMananger from "./lib/DeviceManager.svelte";
+  import MessageManager from "./lib/MessageManager.svelte";
+  import Chart from "./lib/Charts.svelte";
+  import ContextMenu from "./lib/ContextMenu.svelte";
+  import {
+    freezePlotting,
+    darkMode,
+    plottingInterval,
+  } from "./lib/entities/Store";
+  import { onMount } from "svelte";
+  import PlotModal from "./lib/PlotModal.svelte";
 
   function onKeyPressed(e: KeyboardEvent) {
     if (e.key === " ") {
@@ -13,22 +18,22 @@
   }
 
   function changeColorMode() {
-      if ($darkMode) {
-        document.body.classList.add("dark");
-      } else {
-        document.body.classList.remove("dark");
-      }
+    if ($darkMode) {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
     }
+  }
 
   function onChangeColorMode() {
     darkMode.set(!$darkMode);
 
-    changeColorMode()
+    changeColorMode();
   }
 
   onMount(() => {
-    changeColorMode()
-	});
+    changeColorMode();
+  });
 </script>
 
 <svelte:window on:keypress={onKeyPressed} />
@@ -41,10 +46,14 @@
 </nav>
 <main class="responsive">
   <Chart></Chart>
+  <PlotModal></PlotModal>
 </main>
 <footer style="min-block-size: 3rem;">
   <nav>
     <div class="large-space"></div>
+    <button data-ui="#chart-plotting-modal" class="circle transparent">
+      <i>bar_chart</i>
+    </button>
 
     <!-- <div class="row no-padding no-space small-margin">
       <div class="field label left-round border small" style="min-width: 200px;">
@@ -70,7 +79,7 @@
     <button class="circle transparent" on:click={onChangeColorMode}>
       <i>{$darkMode ? "light_mode" : "dark_mode"}</i>
     </button>
-    <div class="field label small-round border small" style="min-width: 200px;" >
+    <div class="field label small-round border small" style="min-width: 200px;">
       <select bind:value={$plottingInterval}>
         <option id="100">100</option>
         <option id="200">200</option>
@@ -78,16 +87,19 @@
       </select>
       <label>Points to display</label>
       <i>arrow_drop_down</i>
-    </div>    
-    
-    
-    <button class="circle transparent" on:click={() => {freezePlotting.set(!$freezePlotting)}}>
+    </div>
+
+    <button
+      class="circle transparent"
+      on:click={() => {
+        freezePlotting.set(!$freezePlotting);
+      }}
+    >
       <i>{$freezePlotting ? "play_arrow" : "pause"}</i>
     </button>
   </nav>
 </footer>
 <ContextMenu></ContextMenu>
-
 
 <style>
 </style>
