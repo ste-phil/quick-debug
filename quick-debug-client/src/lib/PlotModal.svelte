@@ -34,7 +34,7 @@
     </button>
   </div>
 
-  <div class="row">
+  <div class="row center-align">
     {#each chartsWith0 as chart, i}
       {#if i === 0}
         <div
