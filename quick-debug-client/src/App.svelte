@@ -48,7 +48,7 @@
   <Chart></Chart>
   <PlotModal></PlotModal>
 </main>
-<footer style="min-block-size: 3rem;">
+<footer class="fixed surface-container" style="min-block-size: 3rem">
   <nav>
     <div class="large-space"></div>
     <button data-ui="#chart-plotting-modal" class="circle transparent">
@@ -81,9 +81,9 @@
     </button>
     <div class="field label small-round border small" style="min-width: 200px;">
       <select bind:value={$plottingInterval}>
-        <option id="100">100</option>
         <option id="200">200</option>
         <option id="400">400</option>
+        <option id="600">600</option>
       </select>
       <label>Points to display</label>
       <i>arrow_drop_down</i>

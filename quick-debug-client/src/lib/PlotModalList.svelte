@@ -3,15 +3,15 @@
   import type { DataFlow } from "./entities/Entities";
   import type { Writable } from "svelte/store";
 
-  export let dataFlows: Writable<DataFlow[]>;
+  export let dataFlowChartMap: Writable<Map<string, number>>;
   export let chartIdx: number;
 
   const dispatch = createEventDispatcher();
 
-  function handleDragStart(event: DragEvent, item: any) {
+  function handleDragStart(event: DragEvent, flowName: string) {
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", JSON.stringify(item));
+      event.dataTransfer.setData("text/plain", JSON.stringify(flowName));
     }
   }
 
@@ -28,8 +28,8 @@
     const dataReceived = event.dataTransfer?.getData("text/plain");
     if (!dataReceived) return;
 
-    const obj = JSON.parse(dataReceived);
-    dispatch("dataFlowDropped", obj);
+    const dataFlowName = JSON.parse(dataReceived);
+    dispatch("dataFlowDropped", dataFlowName);
   }
 </script>
 
@@ -40,14 +40,14 @@
   on:dragover={handleDragOver}
   on:drop={(event) => handleDrop(event)}
 >
-  {#each $dataFlows as flow}
-    {#if flow.AssignedChartIdx === chartIdx}
+  {#each Array.from($dataFlowChartMap) as [flowName, idx], index}
+    {#if idx === chartIdx}
       <div
         draggable="true"
         class="flow-card max primary-border border fill small-margin wave"
-        on:dragstart={(event) => handleDragStart(event, flow)}
+        on:dragstart={(event) => handleDragStart(event, flowName)}
       >
-        <p class="center-align">{flow.Name}</p>
+        <p class="center-align">{flowName}</p>
       </div>
     {/if}
   {/each}

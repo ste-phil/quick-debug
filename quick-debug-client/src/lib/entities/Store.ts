@@ -14,7 +14,4 @@ export const configKeys: Writable<string[]> = writable([]);
 
 export const freezePlotting = writable(false);
 export const darkMode = UseLocalStorage("dark-mode", true);
-export const plottingInterval = UseLocalStorage("plotting-interval", 100);
-
-export const messageStore: Writable<Map<string, XyDataSeries>> = writable(new Map());
-export const chartContext: Writable<ChartContext | null> = writable(null);
+export const plottingInterval = UseLocalStorage("plotting-interval", 400);

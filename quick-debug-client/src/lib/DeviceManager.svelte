@@ -3,33 +3,11 @@
   import { ConnectionState, IpData } from "./entities/IpDataStore";
   import { Settings } from "./entities/Entities";
   import {
-    chartContext,
     freezePlotting,
-    messageStore,
     ipDataStore,
-    plottingInterval,
     configKeys,
     chartManager,
   } from "./entities/Store";
-  import {
-    SciChartSurface,
-    SciChartDefaults,
-    chartBuilder,
-    SciChartJsNavyTheme,
-    XyDataSeries,
-    FastLineRenderableSeries,
-    NumericAxis,
-    MouseWheelZoomModifier,
-    RubberBandXyZoomModifier,
-    ZoomExtentsModifier,
-    RolloverModifier,
-    LegendModifier,
-    ZoomPanModifier,
-    EZoomState,
-    NumberRange,
-    EExecuteOn,
-    AUTO_COLOR,
-  } from "scichart";
 
   let colorIdx = 0;
   let ipInputField: Input;
@@ -51,8 +29,6 @@
     "#FFFF00",
     "#6600FF",
   ];
-
-  const maxPoints = $plottingInterval;
 
   function isIpValid(ipaddress: string) {
     if (ipaddress.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/)) {
@@ -81,9 +57,6 @@
     console.log("Connecting to " + data.IpAddress);
     data.ConnectionState = ConnectionState.Connecting;
     ipDataStore.update();
-
-    // if (data.Socket)
-    // 	data.Socket.close();
 
     data.Socket = new WebSocket("ws://" + data.IpAddress + ":" + Settings.Port);
 
@@ -129,49 +102,8 @@
     if (!(!isNaN(value) && isFinite(value))) return;
 
     if ($freezePlotting) return;
-    if (
-      $chartContext == null ||
-      $chartContext.ChartSurface == null ||
-      $chartContext.WasmContext == null
-    ) {
-      console.log("Chart context is null");
-      return;
-    }
 
-    const sciChartSurface = $chartContext.ChartSurface;
-    if (!$messageStore.has(field)) {
-      console.log($chartContext.WasmContext);
-      var series = new XyDataSeries($chartContext.WasmContext, {
-        dataSeriesName: field,
-        fifoCapacity: maxPoints,
-        isSorted: true,
-        containsNaN: false,
-      });
-      messageStore.update((x) => {
-        x.set(field, series);
-        return x;
-      });
-      sciChartSurface.renderableSeries.add(
-        new FastLineRenderableSeries($chartContext.WasmContext, {
-          stroke: colorMap[colorIdx++ % colorMap.length],
-          strokeThickness: 5,
-          dataSeries: $messageStore.get(field),
-        })
-      );
-
-      // chartManager.
-    }
-
-    sciChartSurface.zoomExtentsY();
-    if (sciChartSurface.zoomState !== EZoomState.UserZooming) {
-      sciChartSurface.xAxes.items[0].visibleRange = new NumberRange(
-        messageCounter.value - maxPoints,
-        messageCounter.value
-      );
-    }
-
-    const dataSeries = $messageStore.get(field);
-    dataSeries.append(messageCounter.value++, value);
+    chartManager.plot(field, value);
   }
 
   function processsConfigMessage(data: string[]) {

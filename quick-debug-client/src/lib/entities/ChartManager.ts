@@ -1,6 +1,6 @@
 import { writable, type Writable } from "svelte/store";
-import { chartContext, darkMode, plottingInterval } from "./Store";
-import { UseLocalStorage, ReadWritable } from "./Utils";
+import { darkMode, plottingInterval } from "./Store";
+import { ReadWritable, UseLocalStorageMap } from "./Utils";
 
 import {
 	SciChartSurface,
@@ -22,6 +22,7 @@ import {
 	AUTO_COLOR,
 	type TSciChart
 } from "scichart";
+import { tick } from "svelte";
 
 
 const colorMap = [
@@ -52,9 +53,21 @@ export class ChartContext {
 	}
 }
 
+export class SeriesData {
+	public Series: FastLineRenderableSeries;
+	public MessageCounter: number;
+
+	constructor(series: FastLineRenderableSeries) {
+		this.Series = series;
+		this.MessageCounter = 0;
+	}
+
+}
+
 export class Chart {
 	public ChartContext: ChartContext | null = null;
 	public HtmlElementId: string | null = null;
+	public Series: SeriesData[] = [];
 
 	public IsCreated() { return this.ChartContext !== null; }
 }
@@ -62,90 +75,167 @@ export class Chart {
 export class ChartManager {
 	private readonly charts: Writable<Chart[]>;
 	private readonly chartMap: Writable<Map<string, number>>;
+	private readonly alltimeRegisteredDataFlowsMap: Writable<Map<string, number>>;
 
 	public get Charts() { return this.charts; }
 	public get DataFlowChartMap() { return this.chartMap; }
 
 	constructor() {
 		this.charts = writable([]);
-		this.chartMap = UseLocalStorage<Map<string, number>>("ChartManager_chartMap", new Map<string, number>());
+		this.alltimeRegisteredDataFlowsMap = UseLocalStorageMap<string, number>("ChartManager_inactiveChartMap", new Map<string, number>([]));
+		this.chartMap = writable<Map<string, number>>(new Map<string, number>([]));
 	}
 
-	public init() {
+	public async init() {
+		SciChartSurface.UseCommunityLicense();
+
+		const storedChartMap = ReadWritable(this.chartMap);
+		for (const [key, value] of storedChartMap) {
+			if (value === undefined)
+				continue;
+			// Skip index 0 since it means this data-flow is not assigned to any chart
+			if (value === 0)
+				continue;
+
+			const chart = ReadWritable(this.charts)[value - 1];
+			if (chart === undefined) {
+				console.log(`Chart with index ${value} not found. Requesting new chart.`);
+				this.requestNewChart();
+				await tick();
+				continue;
+			}
+			const chartContext = chart.ChartContext;
+			if (chartContext === null) {
+				// Chart creation was already requested, but not yet completed
+				return;
+			}
+			else {
+				const series = this.createSeries(key, chart, ReadWritable(plottingInterval));
+			}
+		}
+
 		this.chartMap.update((x) => {
 			for (const [key, value] of x) {
-				if (value === undefined)
-					continue;
 
-				const chartContext = ReadWritable(this.charts)[value].ChartContext;
-				if (chartContext === undefined) {
-					this.requestNewChart().then(newChartContext => {
-						const series = this.createSeries(key, newChartContext, $plottingInterval);
-						this.createChart(newChartContext);
-						this.addSeries(key, value)
-
-					});
-				}
-				else {
-					const series = this.createSeries(key, chartContext, $plottingInterval);
-					this.addSeries(key, value)
-				}
 			}
 
 			return x;
 		});
 	}
 
-	public registerDataFlow(name: string) {
-		ReadWritable(this.chartMap).set(name, 0);
+	public plot(dataFlow: string, value: number) {
+		const chartIdx = ReadWritable(this.chartMap).get(dataFlow);
+		if (chartIdx === undefined) {
+			this.addDataFlow(dataFlow);
+			this.plot(dataFlow, value);
+			return;
+		}
+
+		const chart = ReadWritable(this.charts)[chartIdx - 1];
+		if (chart === undefined || chart.ChartContext === null)
+			return;
+
+		const series = chart.Series.find(x => x.Series.dataSeries.dataSeriesName === dataFlow);
+		if (series === undefined) {
+			this.createSeries(dataFlow, chart, ReadWritable(plottingInterval));
+			this.plot(dataFlow, value);
+			return;
+		}
+
+		(series.Series.dataSeries as XyDataSeries).append(series.MessageCounter++, value);
+
+		const chartSurface = chart.ChartContext?.ChartSurface;
+		if (chartSurface === undefined) {
+			console.log(`The chart surface for the data-flow '${dataFlow}' is not available. Does the chart exist?`);
+			return;
+		}
+
+		chartSurface.zoomExtentsY();
+		if (chartSurface.zoomState !== EZoomState.UserZooming) {
+			chartSurface.xAxes.get(0).visibleRange = new NumberRange(
+				series.MessageCounter - series.Series.dataSeries.fifoCapacity!,
+				series.MessageCounter
+			);
+		}
 	}
 
-	public plot(graph: string, value: number) {
-		const val = ReadWritable(this.chartMap).get(graph);
-		if (val !== undefined) {
+	public addDataFlow(dataFlow: string) {
+		let chartIdx = ReadWritable(this.alltimeRegisteredDataFlowsMap).get(dataFlow);
+		if (chartIdx === undefined)
+			chartIdx = 0;
 
+		// console.log(`Adding data-flow '${dataFlow}' to chart ${chartIdx}`);
+		// console.log(`Current chart count is ${ReadWritable(this.Charts).length}`);
+		while (chartIdx > ReadWritable(this.Charts).length) {
+			this.requestNewChart();
 		}
+
+		this.chartMap.update(x => {
+			x.set(dataFlow, chartIdx);
+			return x;
+		});
+
+		this.alltimeRegisteredDataFlowsMap.update(x => {
+			x.set(dataFlow, chartIdx);
+			return x;
+		});
+	}
+
+	public moveDataFlow(dataFlow: string, chartIdx: number) {
+		this.chartMap.update(x => {
+			const oldChartIdx = x.get(dataFlow);
+			// Remove series from old chart if it exists
+			if (oldChartIdx !== undefined) {
+				this.removeSeries(ReadWritable(this.charts)[oldChartIdx - 1], dataFlow);
+			}
+
+			x.set(dataFlow, chartIdx);
+			return x;
+		});
+
+		this.alltimeRegisteredDataFlowsMap.update(x => {
+			x.set(dataFlow, chartIdx);
+			return x;
+		});
+
+		const chart = ReadWritable(this.charts)[chartIdx];
+		if (chart === undefined) {
+			return;
+		}
+		this.createSeries(dataFlow, chart, ReadWritable(plottingInterval));
+	}
+
+
+	public removeDataFlow(dataFlow: string) {
+		this.chartMap.update(x => {
+			x.delete(dataFlow);
+			return x;
+		});
 	}
 
 	public requestNewChart() {
 		this.charts.update(x => [...x, new Chart()]);
 	}
 
-	public removeChart(chart: ChartContext) {
-		this.Charts.update(x => {
-			x.splice(x.indexOf(chart), 1);
+	public removeChart(chartIdx: number) {
+		chartIdx = Math.max(0, chartIdx - 1); // Since the index is 1-based
+		this.removeDatFlowAssignmentsFromChart(chartIdx);
+		this.charts.update(x => {
+			x.splice(chartIdx, 1)
 			return x;
 		});
 	}
 
-	public async addSeries(graph: string, chartIdx: number) {
-		// if (this.$charts[chartIdx] === undefined) {
-		// 	const newChartContext = await this.createChart();
-		// 	this.addChart(newChartContext);
-		// 	this.createSeries(graph, newChartContext, $plottingInterval);
-		// }
-
-		this.chartMap.update(x => {
-			x.set(graph, chartIdx);
-			return x;
-		});
-	}
-
-	public removeSeries(graph: string) {
-		this.chartMap.update(x => {
-			x.delete(graph);
-			return x;
-		});
-	}
-
-	public async createChart(htmlElementId: string): Promise<ChartContext | null> {
+	public async createChart(chartIdx: number, htmlElementId: string): Promise<ChartContext | null> {
 		//Check if chart already exists
 		if (ReadWritable(this.charts).find(x => x.HtmlElementId === htmlElementId) !== undefined) {
 			return null;
 		}
 
+		console.log("Creating chart nr: " + ReadWritable(this.charts).length + " and element id: " + htmlElementId);
 
-		function createChartTheme(darkMode: boolean) {
+		// Create a custom theme for the chart
+		const createChartTheme = (darkMode: boolean) => {
 			const customTheme = {
 				//axisBorder: "Transparent",
 				//axisTitleColor: "#6495ED",
@@ -211,11 +301,6 @@ export class ChartManager {
 			},
 		);
 
-		chartContext.set(new ChartContext(
-			wasmContext,
-			sciChartSurface
-		));
-
 		const mouseWheelZoomModifier = new MouseWheelZoomModifier();
 		// const rubberBandZoomModifier = new RubberBandXyZoomModifier();
 		const zoomPanModifier = new ZoomPanModifier({
@@ -241,9 +326,7 @@ export class ChartManager {
 			sciChartSurface.applyTheme(createChartTheme(x))
 		});
 
-		console.log("Chart creating ...", ReadWritable(this.Charts));
-
-		const chart = ReadWritable(this.charts).at(-1);
+		const chart = ReadWritable(this.charts).at(chartIdx);
 		if (chart === undefined) {
 			console.error("Chart not found");
 			return null;
@@ -252,13 +335,30 @@ export class ChartManager {
 		chart.ChartContext = new ChartContext(wasmContext, sciChartSurface);
 		chart.HtmlElementId = htmlElementId;
 
-		console.log("Chart created", ReadWritable(this.Charts));
-
 		return chart.ChartContext;
 	}
 
+	// Checks if any data-flows are aassigned to this chart and assigns them to the first
+	private removeDatFlowAssignmentsFromChart(chartIdx: number) {
+		this.chartMap.update(x => {
+			for (const [key, value] of x) {
+				const chart = ReadWritable(this.charts)[value];
+				this.removeSeries(chart, key);
 
-	private createSeries(graph: string, chartContext: ChartContext, maxPoints: number): FastLineRenderableSeries {
+				if (value === chartIdx) {
+					x.set(key, 0);
+				}
+			}
+			return x;
+		});
+	}
+
+	private createSeries(graph: string, chart: Chart, maxPoints: number): FastLineRenderableSeries {
+		const chartContext = chart.ChartContext;
+		if (chartContext === null) {
+			throw new Error("ChartContext is null. This should not happen.");
+		}
+
 		const series = new XyDataSeries(chartContext.WasmContext, {
 			dataSeriesName: graph,
 			fifoCapacity: maxPoints,
@@ -273,10 +373,21 @@ export class ChartManager {
 		});
 
 		chartContext.ChartSurface.renderableSeries.add(fastRenderSeries);
-
-		// chartContext.ChartSurface.renderableSeries.asArray()[0].
-
+		chart.Series.push(new SeriesData(fastRenderSeries));
 
 		return fastRenderSeries;
+	}
+
+	private removeSeries(chart: Chart, dataFlow: string) {
+		const series = chart.Series.find(x => x.Series.dataSeries.dataSeriesName === dataFlow);
+		if (series === undefined)
+			return;
+
+		// Remove fastrenderable series from actual chart
+		chart.ChartContext?.ChartSurface.renderableSeries.remove(series.Series);
+		// Remove series from series array
+		chart.Series = chart.Series.filter(x => x.Series.dataSeries.dataSeriesName !== dataFlow);
+
+		series.Series.delete();
 	}
 }

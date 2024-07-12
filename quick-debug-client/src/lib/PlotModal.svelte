@@ -1,41 +1,26 @@
 <script lang="ts">
-  import { chartManager } from "./entities/Store.ts";
-  import { DataFlow } from "./entities/Entities.ts";
+  import { chartManager } from "./entities/Store";
+  import { DataFlow } from "./entities/Entities";
   import PlotModalList from "./PlotModalList.svelte";
-  import { writable } from "svelte/store";
+  import { Chart } from "./entities/ChartManager";
 
-  let numberCharts = [0, 1, 2];
+  let chartsWith0: Chart[] = [];
+  $: charts = chartManager.Charts;
+  $: {
+    chartsWith0 = Array.from($charts);
+    chartsWith0.splice(0, 0, new Chart());
+  }
 
-  let dataFlows: Writable<DataFlow[]> = writable([
-    new DataFlow("A", 1),
-    new DataFlow("B", 2),
-    new DataFlow("C", 2),
-    new DataFlow("D", 0),
-    new DataFlow("E", 1),
-  ]);
-
-  function AddChart() {
+  function addChart() {
     chartManager.requestNewChart();
-    numberCharts = [...numberCharts, numberCharts.length];
   }
 
-  function RemoveChart(idx: number) {
-    return () => {
-      numberCharts = numberCharts.filter((_, i) => i !== idx);
-    };
+  function removeChart(idx: number) {
+    chartManager.removeChart(idx);
   }
 
-  function HandleDataFlowDropped(event: CustomEvent, newChartId: number) {
-    console.log(event.detail);
-
-    dataFlows.update((x) => {
-      return x.map((flow) => {
-        if (flow.Name === event.detail.Name) {
-          return new DataFlow(flow.Name, newChartId);
-        }
-        return flow;
-      });
-    });
+  function handleDataFlowDropped(event: CustomEvent, newChartId: number) {
+    chartManager.moveDataFlow(event.detail, newChartId);
   }
 </script>
 
@@ -50,7 +35,7 @@
   </div>
 
   <div class="row">
-    {#each numberCharts as item, i}
+    {#each chartsWith0 as chart, i}
       {#if i === 0}
         <div
           class="chart-container small-round secondary-container small-padding"
@@ -58,9 +43,9 @@
           <h6 class="center-align small-margin">Not assigned</h6>
           <div class="divider secondary"></div>
           <PlotModalList
-            {dataFlows}
+            dataFlowChartMap={chartManager.DataFlowChartMap}
             chartIdx={i}
-            on:dataFlowDropped={(e) => HandleDataFlowDropped(e, i)}
+            on:dataFlowDropped={(e) => handleDataFlowDropped(e, i)}
           ></PlotModalList>
         </div>
       {:else}
@@ -70,22 +55,24 @@
           <div class="row">
             <h6 class="center-align small-margin">Chart {i}</h6>
             <div class="max"></div>
-            <button class="transparent link circle" on:click={RemoveChart(i)}
+            <button
+              class="transparent link circle"
+              on:click={() => removeChart(i)}
               ><i>close</i>
             </button>
           </div>
           <div class="divider secondary"></div>
           <PlotModalList
-            {dataFlows}
+            dataFlowChartMap={chartManager.DataFlowChartMap}
             chartIdx={i}
-            on:dataFlowDropped={(e) => HandleDataFlowDropped(e, i)}
+            on:dataFlowDropped={(e) => handleDataFlowDropped(e, i)}
           ></PlotModalList>
         </div>
       {/if}
     {/each}
   </div>
   <div class="max">
-    <button class="max small-round center-align center" on:click={AddChart}>
+    <button class="max small-round center-align center" on:click={addChart}>
       <i>add</i>
       Add new chart
     </button>
