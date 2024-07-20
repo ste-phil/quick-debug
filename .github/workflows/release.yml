@@ -35,7 +35,7 @@ jobs:
 
       - name: Extract version from tag
         id: extract_version
-        run: echo "::set-output name=VERSION::${GITHUB_REF#refs/tags/v}"
+        run: echo echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         id: create_release
@@ -44,10 +44,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: "Release ${{ steps.extract_version.outputs.VERSION }}"
+          release_name: "Release ${{ env.VERSION }}"
           draft: false
           prerelease: false
-          files: release.zip
 
       - name: Upload HTML file to release
         uses: actions/upload-release-asset@v1
