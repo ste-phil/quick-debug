@@ -26,20 +26,14 @@ import { tick } from "svelte";
 
 
 const colorMap = [
-	"#00FF00",
+	"#009F00",
 	"#0000FF",
 	"#FF00FF",
-	"#00FFFF",
+	"#001FFF",
 	"#FFFF00",
 	"#6600FF",
 	"#FF6600",
 	"#FF0000",
-	"#00FF00",
-	"#0000FF",
-	"#FF00FF",
-	"#00FFFF",
-	"#FFFF00",
-	"#6600FF",
 ];
 let colorIdx = 0;
 
@@ -55,11 +49,11 @@ export class ChartContext {
 
 export class SeriesData {
 	public Series: FastLineRenderableSeries;
-	public MessageCounter: number;
+	public AxisPlotPoint: number;
 
 	constructor(series: FastLineRenderableSeries) {
 		this.Series = series;
-		this.MessageCounter = 0;
+		this.AxisPlotPoint = 0;
 	}
 
 }
@@ -68,6 +62,7 @@ export class Chart {
 	public ChartContext: ChartContext | null = null;
 	public HtmlElementId: string | null = null;
 	public Series: SeriesData[] = [];
+	public AxisFurthestPlotPoint: number = 0;
 
 	public IsCreated() { return this.ChartContext !== null; }
 }
@@ -113,14 +108,6 @@ export class ChartManager {
 				const series = this.createSeries(key, chart, ReadWritable(plottingInterval));
 			}
 		}
-
-		this.chartMap.update((x) => {
-			for (const [key, value] of x) {
-
-			}
-
-			return x;
-		});
 	}
 
 	public plot(dataFlow: string, value: number) {
@@ -135,6 +122,7 @@ export class ChartManager {
 		if (chart === undefined || chart.ChartContext === null)
 			return;
 
+
 		const series = chart.Series.find(x => x.Series.dataSeries.dataSeriesName === dataFlow);
 		if (series === undefined) {
 			this.createSeries(dataFlow, chart, ReadWritable(plottingInterval));
@@ -142,7 +130,15 @@ export class ChartManager {
 			return;
 		}
 
-		(series.Series.dataSeries as XyDataSeries).append(series.MessageCounter++, value);
+		// Update the axis plot point for this series and the chart
+		// This is used to plot new data for different data flows at the same x point
+		series.AxisPlotPoint++
+		const newPlotPoint = Math.max(series.AxisPlotPoint, chart.AxisFurthestPlotPoint);
+		chart.AxisFurthestPlotPoint = newPlotPoint;
+		series.AxisPlotPoint = newPlotPoint;
+
+		const xySeries = series.Series.dataSeries as XyDataSeries;
+		xySeries.append(series.AxisPlotPoint, value);
 
 		const chartSurface = chart.ChartContext?.ChartSurface;
 		if (chartSurface === undefined) {
@@ -150,11 +146,11 @@ export class ChartManager {
 			return;
 		}
 
-		chartSurface.zoomExtentsY();
 		if (chartSurface.zoomState !== EZoomState.UserZooming) {
+			chartSurface.zoomExtentsY();
 			chartSurface.xAxes.get(0).visibleRange = new NumberRange(
-				series.MessageCounter - series.Series.dataSeries.fifoCapacity!,
-				series.MessageCounter
+				series.AxisPlotPoint - series.Series.dataSeries.fifoCapacity!,
+				series.AxisPlotPoint
 			);
 		}
 	}
@@ -184,8 +180,8 @@ export class ChartManager {
 	public moveDataFlow(dataFlow: string, chartIdx: number) {
 		this.chartMap.update(x => {
 			const oldChartIdx = x.get(dataFlow);
-			// Remove series from old chart if it exists
-			if (oldChartIdx !== undefined) {
+			// Remove series from old chart if it exists and only if it is assigned 
+			if (oldChartIdx !== undefined && oldChartIdx != 0) {
 				this.removeSeries(ReadWritable(this.charts)[oldChartIdx - 1], dataFlow);
 			}
 

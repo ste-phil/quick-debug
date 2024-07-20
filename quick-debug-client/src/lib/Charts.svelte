@@ -2,6 +2,7 @@
   import { onMount, tick } from "svelte";
   import { chartManager } from "./entities/Store";
   import { Chart } from "./entities/ChartManager";
+  import { EZoomState, NumberRange } from "scichart";
 
   let elementRefs: HTMLElement[] = [];
 
@@ -11,6 +12,11 @@
 
   $: charts = chartManager.Charts;
   $: checkRenderedElements($charts);
+
+  function resetFocus(chart: Chart) {
+    const chartContext = chart.ChartContext!;
+    chartContext.ChartSurface.zoomExtents();
+  }
 
   async function checkRenderedElements($charts: Chart[]) {
     await tick(); // Wait for the DOM to update
@@ -22,11 +28,19 @@
   }
 </script>
 
-<!-- <div id="chart" class="responsive"></div> -->
 <div class="grid">
   {#each $charts as chart, index (chart)}
     <div class="s6 border small-round padding">
-      <p>Chart {index}</p>
+      <div class="row">
+        <p>Chart {index}</p>
+        <div class="max"></div>
+        <button
+          class="transparent link circle"
+          on:click={() => resetFocus(chart)}
+        >
+          <i>crop_free</i>
+        </button>
+      </div>
       <div bind:this={elementRefs[index]} id="chart-{index}"></div>
     </div>
   {/each}

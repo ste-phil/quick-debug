@@ -34,7 +34,7 @@
     </button>
   </div>
 
-  <div class="row center-align">
+  <div class="row center-align responsive" style="align-items: stretch;">
     {#each chartsWith0 as chart, i}
       {#if i === 0}
         <div
@@ -81,7 +81,9 @@
 
 <style>
   .chart-container {
+    display: flex;
+    flex-direction: column;
     width: 200px;
-    height: 400px;
+    min-height: 400px;
   }
 </style>
