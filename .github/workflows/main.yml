@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger only on tags starting with "v"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        working-directory: quick-debug-client
+        run: npm install
+
+      - name: Build project
+        working-directory: quick-debug-client
+        run: npm run build
+
+      - name: Archive additional files
+        run: |
+          mkdir release
+          cp quick-debug-native/Libs/QuickDebug ./release/
+          cd release
+          zip -r QuickDebug.zip QuickDebug
+
+      - name: Extract version from tag
+        id: extract_version
+        run: echo "::set-output name=VERSION::${GITHUB_REF#refs/tags/v}"
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: "Release ${{ steps.extract_version.outputs.VERSION }}"
+          draft: false
+          prerelease: false
+          files: release.zip
+
+      - name: Upload HTML file to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: quick-debug-client/dist/your-output-file.html
+          asset_name: your-output-file.html
+          asset_content_type: text/html
+
+      - name: Upload ZIP file to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/QuickDebug.zip
+          asset_name: QuickDebug.zip
+          asset_content_type: application/zip
