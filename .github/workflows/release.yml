@@ -29,7 +29,7 @@ jobs:
       - name: Archive additional files
         run: |
           mkdir release
-          cp quick-debug-native/Libs/QuickDebug ./release/
+          cp -r quick-debug-native/Libs/QuickDebug ./release/
           cd release
           zip -r QuickDebug.zip QuickDebug
 
