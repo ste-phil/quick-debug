@@ -54,8 +54,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: quick-debug-client/dist/your-output-file.html
-          asset_name: your-output-file.html
+          asset_path: quick-debug-client/dist/index.html
+          asset_name: quick-debug-client.html
           asset_content_type: text/html
 
       - name: Upload ZIP file to release
