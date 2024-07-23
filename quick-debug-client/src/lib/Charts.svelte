@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { chartManager } from "./entities/Store";
-  import { Chart } from "./entities/ChartManager";
-  import { EZoomState, NumberRange } from "scichart";
+  import { Chart, ChartType } from "./entities/ChartManager";
 
   let elementRefs: HTMLElement[] = [];
+  let selectedButton: number = 1;
 
   onMount(() => {
     chartManager.init();
@@ -16,6 +16,11 @@
   function resetFocus(chart: Chart) {
     const chartContext = chart.ChartContext!;
     chartContext.ChartSurface.zoomExtents();
+  }
+
+  function changeChartType(chart: Chart, chartType: ChartType, btnIdx: number) {
+    chartManager.changeChartType(chart, chartType);
+    selectedButton = btnIdx;
   }
 
   async function checkRenderedElements($charts: Chart[]) {
@@ -34,8 +39,28 @@
       <div class="row">
         <p>Chart {index}</p>
         <div class="max"></div>
+
+        <nav class="no-space">
+          <button
+            class="border left-round small-round {selectedButton === 0
+              ? 'fill'
+              : ''}"
+            on:click={() => changeChartType(chart, ChartType.StackedColumn, 0)}
+          >
+            <i>stacked_bar_chart</i>
+          </button>
+          <button
+            class="border right-round small-round {selectedButton === 1
+              ? 'fill'
+              : ''}"
+            on:click={() => changeChartType(chart, ChartType.Line, 1)}
+          >
+            <i>show_chart</i>
+          </button>
+        </nav>
+
         <button
-          class="transparent link circle"
+          class="small-round circle transaprent border"
           on:click={() => resetFocus(chart)}
         >
           <i>crop_free</i>

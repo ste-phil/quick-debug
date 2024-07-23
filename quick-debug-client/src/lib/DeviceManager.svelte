@@ -81,29 +81,47 @@
     enum MessageType {
       Plot = "1",
       ConfigurationVariables = "2",
+      PlotXY = "3",
     }
 
-    const messageCounter = { value: 0 };
     data.Socket.onmessage = function (event) {
       const message = event.data;
       const data = message.split(";");
       const messageType = data[0];
 
-      if (messageType === MessageType.Plot)
-        processPlotMessage(data, messageCounter);
+      if (messageType === MessageType.Plot) processPlotMessage(data);
       else if (messageType === MessageType.ConfigurationVariables)
         processsConfigMessage(data);
+      else if (messageType === MessageType.PlotXY) processPlotXYMessage(data);
     };
   }
 
-  function processPlotMessage(data: string[], messageCounter: any) {
+  function processPlotMessage(data: string[]) {
+    if ($freezePlotting) return;
+
     const field = data[1];
     const value = parseFloat(data[2]);
     if (!(!isNaN(value) && isFinite(value))) return;
 
+    chartManager.plot(field, value);
+  }
+
+  function processPlotXYMessage(data: string[]) {
     if ($freezePlotting) return;
 
-    chartManager.plot(field, value);
+    const sequenceId = data[1];
+    const xAxis = data[1];
+
+    let sequence: any[] = [];
+    for (let i = 2; i < data.length - 1; i += 2) {
+      const dataFlow = data[i];
+      let value = parseFloat(data[i + 1]);
+      if (!(!isNaN(value) && isFinite(value))) value = 0;
+
+      sequence.push({ dataFlow, value });
+    }
+
+    chartManager.plotSequence(sequenceId, sequence);
   }
 
   function processsConfigMessage(data: string[]) {

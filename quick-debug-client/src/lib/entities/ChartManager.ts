@@ -4,14 +4,10 @@ import { ReadWritable, UseLocalStorageMap } from "./Utils";
 
 import {
 	SciChartSurface,
-	SciChartDefaults,
-	chartBuilder,
 	SciChartJsNavyTheme,
 	XyDataSeries,
-	FastLineRenderableSeries,
 	NumericAxis,
 	MouseWheelZoomModifier,
-	RubberBandXyZoomModifier,
 	ZoomExtentsModifier,
 	RolloverModifier,
 	LegendModifier,
@@ -19,18 +15,34 @@ import {
 	EZoomState,
 	NumberRange,
 	EExecuteOn,
-	AUTO_COLOR,
-	type TSciChart
+	type TSciChart,
+	StackedColumnRenderableSeries,
+	BaseRenderableSeries,
+	type IDataSeries,
+	FastLineRenderableSeries,
+	FastMountainRenderableSeries,
+	FastBandRenderableSeries,
+	FastOhlcRenderableSeries,
+	FastCandlestickRenderableSeries,
+	StackedColumnCollection,
+	type IRenderableSeries,
+	FastColumnRenderableSeries
 } from "scichart";
 import { tick } from "svelte";
 
+
+export enum ChartType {
+	Line,
+	Column,
+	StackedColumn
+}
 
 const colorMap = [
 	"#009F00",
 	"#0000FF",
 	"#FF00FF",
 	"#001FFF",
-	"#FFFF00",
+	"#FFAF00",
 	"#6600FF",
 	"#FF6600",
 	"#FF0000",
@@ -48,11 +60,15 @@ export class ChartContext {
 }
 
 export class SeriesData {
-	public Series: FastLineRenderableSeries;
+	public RenderSeries: IRenderableSeries;
+	public DataFlow: string;
+	public DataSeries: IDataSeries;
 	public AxisPlotPoint: number;
 
-	constructor(series: FastLineRenderableSeries) {
-		this.Series = series;
+	constructor(dataFlow: string, dataSeries: IDataSeries, series: BaseRenderableSeries) {
+		this.DataFlow = dataFlow;
+		this.DataSeries = dataSeries;
+		this.RenderSeries = series;
 		this.AxisPlotPoint = 0;
 	}
 
@@ -63,6 +79,8 @@ export class Chart {
 	public HtmlElementId: string | null = null;
 	public Series: SeriesData[] = [];
 	public AxisFurthestPlotPoint: number = 0;
+
+	public StackGroup: StackedColumnCollection | null = null;
 
 	public IsCreated() { return this.ChartContext !== null; }
 }
@@ -105,7 +123,7 @@ export class ChartManager {
 				return;
 			}
 			else {
-				const series = this.createSeries(key, chart, ReadWritable(plottingInterval));
+				const series = this.createSeries(key, chart);
 			}
 		}
 	}
@@ -118,38 +136,57 @@ export class ChartManager {
 			return;
 		}
 
-		const chart = ReadWritable(this.charts)[chartIdx - 1];
+		const chart = ReadWritable(this.charts)[chartIdx - 1]; // since the 0th chart is not a real chart (it is the not assigned chart)
 		if (chart === undefined || chart.ChartContext === null)
 			return;
 
 
-		const series = chart.Series.find(x => x.Series.dataSeries.dataSeriesName === dataFlow);
+		const series = chart.Series.find(x => { return x.DataFlow === dataFlow });
 		if (series === undefined) {
-			this.createSeries(dataFlow, chart, ReadWritable(plottingInterval));
+			this.createSeries(dataFlow, chart);
 			this.plot(dataFlow, value);
 			return;
 		}
 
+
 		// Update the axis plot point for this series and the chart
 		// This is used to plot new data for different data flows at the same x point
+		// const oldPoint = series.AxisPlotPoint;
+		// const oldChartPoint = chart.AxisFurthestPlotPoint;
+
+
 		series.AxisPlotPoint++
 		const newPlotPoint = Math.max(series.AxisPlotPoint, chart.AxisFurthestPlotPoint);
 		chart.AxisFurthestPlotPoint = newPlotPoint;
 		series.AxisPlotPoint = newPlotPoint;
 
-		const xySeries = series.Series.dataSeries as XyDataSeries;
-		xySeries.append(series.AxisPlotPoint, value);
+		const xySeries = series.DataSeries as XyDataSeries;
+		if (chart.StackGroup !== null) {
+			// if (oldPoint < oldChartPoint) {
+			// 	xySeries.update(chart.AxisFurthestPlotPoint, value);
+			// }
+			// else {
+			// for (const series of chart.Series) {
+			// 	(series.DataSeries as XyDataSeries).append(chart.AxisFurthestPlotPoint, value);
+			// }
+			// }
+
+		} else {
+			xySeries.append(series.AxisPlotPoint, value);
+		}
+
+
 
 		const chartSurface = chart.ChartContext?.ChartSurface;
 		if (chartSurface === undefined) {
-			console.log(`The chart surface for the data-flow '${dataFlow}' is not available. Does the chart exist?`);
+			console.error(`The chart surface for the data-flow '${dataFlow}' is not available. Does the chart exist?`);
 			return;
 		}
 
 		if (chartSurface.zoomState !== EZoomState.UserZooming) {
-			chartSurface.zoomExtentsY();
+			chartSurface.zoomExtentsY(.3);
 			chartSurface.xAxes.get(0).visibleRange = new NumberRange(
-				series.AxisPlotPoint - series.Series.dataSeries.fifoCapacity!,
+				series.AxisPlotPoint - series.DataSeries.fifoCapacity!,
 				series.AxisPlotPoint
 			);
 		}
@@ -198,7 +235,7 @@ export class ChartManager {
 		if (chart === undefined) {
 			return;
 		}
-		this.createSeries(dataFlow, chart, ReadWritable(plottingInterval));
+		this.createSeries(dataFlow, chart);
 	}
 
 
@@ -220,6 +257,35 @@ export class ChartManager {
 			x.splice(chartIdx, 1)
 			return x;
 		});
+	}
+
+	public changeChartType(chart: Chart, newType: ChartType) {
+		// Clear out old renderSeries but save the dataSeries
+		const dataSeries: IDataSeries[] = []
+		for (const series of chart.Series) {
+			dataSeries.push(series.DataSeries)
+			chart.ChartContext?.ChartSurface.renderableSeries.remove(series.RenderSeries);
+			series.RenderSeries.dataSeries = new XyDataSeries(chart.ChartContext!.WasmContext, {});
+			series.RenderSeries.delete();
+		}
+
+		// Clear the series array
+		chart.AxisFurthestPlotPoint = 0;
+		chart.Series.splice(0, chart.Series.length);
+
+		// Recreate the render series with the new type
+		for (let i = 0; i < dataSeries.length; i++) {
+			this.createRenderableSeries(chart, dataSeries[i], newType);
+		}
+
+		if (newType === ChartType.StackedColumn) {
+			chart.ChartContext?.ChartSurface.renderableSeries.add(chart.StackGroup!);
+		}
+		else {
+			chart.StackGroup!.delete();
+			chart.ChartContext?.ChartSurface.renderableSeries.remove(chart.StackGroup!);
+			chart.StackGroup = null;
+		}
 	}
 
 	public async createChart(chartIdx: number, htmlElementId: string): Promise<ChartContext | null> {
@@ -349,41 +415,79 @@ export class ChartManager {
 		});
 	}
 
-	private createSeries(graph: string, chart: Chart, maxPoints: number): FastLineRenderableSeries {
+	private createSeries(dataFlow: string, chart: Chart): BaseRenderableSeries {
+		const maxPoints = ReadWritable(plottingInterval);
 		const chartContext = chart.ChartContext;
 		if (chartContext === null) {
 			throw new Error("ChartContext is null. This should not happen.");
 		}
 
 		const series = new XyDataSeries(chartContext.WasmContext, {
-			dataSeriesName: graph,
+			dataSeriesName: dataFlow,
 			fifoCapacity: maxPoints,
 			isSorted: true,
 			containsNaN: false,
 		});
 
-		const fastRenderSeries = new FastLineRenderableSeries(chartContext.WasmContext, {
-			stroke: colorMap[colorIdx++ % colorMap.length],
-			strokeThickness: 5,
-			dataSeries: series,
-		});
-
-		chartContext.ChartSurface.renderableSeries.add(fastRenderSeries);
-		chart.Series.push(new SeriesData(fastRenderSeries));
-
-		return fastRenderSeries;
+		return this.createRenderableSeries(chart, series, chart.StackGroup === null ? ChartType.Line : ChartType.StackedColumn);
 	}
 
 	private removeSeries(chart: Chart, dataFlow: string) {
-		const series = chart.Series.find(x => x.Series.dataSeries.dataSeriesName === dataFlow);
+		const series = chart.Series.find(x => x.DataFlow === dataFlow);
 		if (series === undefined)
 			return;
 
 		// Remove fastrenderable series from actual chart
-		chart.ChartContext?.ChartSurface.renderableSeries.remove(series.Series);
+		chart.ChartContext?.ChartSurface.renderableSeries.remove(series.RenderSeries);
 		// Remove series from series array
-		chart.Series = chart.Series.filter(x => x.Series.dataSeries.dataSeriesName !== dataFlow);
+		chart.Series = chart.Series.filter(x => x.DataFlow !== dataFlow);
 
-		series.Series.delete();
+		series.RenderSeries.delete();
+	}
+
+	private createRenderableSeries(chart: Chart, dataSeries: IDataSeries, type: ChartType): BaseRenderableSeries {
+		const chartContext = chart.ChartContext!;
+		let renderableSeries: BaseRenderableSeries;
+		switch (type) {
+			case ChartType.Column:
+				renderableSeries = new FastColumnRenderableSeries(chartContext.WasmContext, {
+					stroke: colorMap[colorIdx++ % colorMap.length],
+					strokeThickness: 5,
+					dataSeries: dataSeries,
+				});
+				chartContext.ChartSurface.renderableSeries.add(renderableSeries);
+				chart.Series.push(new SeriesData(dataSeries.dataSeriesName, dataSeries, renderableSeries));
+				return renderableSeries;
+			case ChartType.Line:
+				renderableSeries = new FastLineRenderableSeries(chartContext.WasmContext, {
+					stroke: colorMap[colorIdx++ % colorMap.length],
+					strokeThickness: 5,
+					dataSeries: dataSeries,
+				});
+				chartContext.ChartSurface.renderableSeries.add(renderableSeries);
+				chart.Series.push(new SeriesData(dataSeries.dataSeriesName, dataSeries, renderableSeries));
+				return renderableSeries;
+			case ChartType.StackedColumn:
+				if (chart.StackGroup == null) {
+					chart.StackGroup = new StackedColumnCollection(chart.ChartContext!.WasmContext);
+					chart.StackGroup.dataPointWidth = 0.6;
+				}
+
+				const newDataSeries = new XyDataSeries(chartContext.WasmContext, {
+					dataSeriesName: dataSeries.dataSeriesName,
+				});
+
+				const stackedSeries = new StackedColumnRenderableSeries(chartContext.WasmContext, {
+					fill: colorMap[colorIdx++ % colorMap.length],
+					stroke: colorMap[colorIdx++ % colorMap.length],
+					strokeThickness: 2,
+					opacity: 0.8,
+					dataSeries: newDataSeries,
+					stackedGroupId: "GroupId",
+				});
+				chart.StackGroup.add(stackedSeries);
+				chart.Series.push(new SeriesData(dataSeries.dataSeriesName, newDataSeries, stackedSeries));
+				return stackedSeries;
+		}
 	}
 }
