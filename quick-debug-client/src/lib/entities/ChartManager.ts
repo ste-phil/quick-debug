@@ -30,10 +30,12 @@ const colorMap = [
 	"#0000FF",
 	"#FF00FF",
 	"#001FFF",
-	"#FFFF00",
+	"#CF8E00",
 	"#6600FF",
 	"#FF6600",
 	"#FF0000",
+	"#560061",
+	"#304d00",
 ];
 let colorIdx = 0;
 

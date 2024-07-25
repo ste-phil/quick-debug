@@ -49,5 +49,9 @@
 <style>
   :global(.scichart__legend > div) {
     border: 1px solid #6750a4;
+    z-index: 0; /* Fix for the legend being on top of the chart */
+  }
+  :global(svg:has(> .scichart__rollover-tooltip)) {
+    z-index: 1;
   }
 </style>
