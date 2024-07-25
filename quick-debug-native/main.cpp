@@ -12,7 +12,7 @@
 
 int main()
 {
-	QuickDebug::Startup({
+	QD::QuickDebug::Startup({
 		.UseWebserver = false
 	});
 
@@ -20,9 +20,9 @@ int main()
 	f32 amplitude = 1;
 	FixedString<32> text = "Default text";
 	i32 offset = 0;
-	QuickDebug::RegisterRecvKey("Amplitude", amplitude);
-	QuickDebug::RegisterRecvKey("Text", text);
-	QuickDebug::RegisterRecvKey("Offset", offset);
+	QD::QuickDebug::RegisterRecvKey("Amplitude", amplitude);
+	QD::QuickDebug::RegisterRecvKey("Text", text);
+	QD::QuickDebug::RegisterRecvKey("Offset", offset);
  
 	std::thread([&]() {
 		const int MSG_DELAY_MS = 16;
@@ -32,7 +32,7 @@ int main()
 			// std::cout << "Sending message: " << val << std::endl;
 			{
 				// Timer("sin");
-				QuickDebug::Plot("sin", val);
+				QD::QuickDebug::Plot("sin", val);
 			}
 			Sleep(MSG_DELAY_MS);
 		}
@@ -46,7 +46,7 @@ int main()
 			// std::cout << "Sending message: " << val << std::endl;
 			{
 				// Timer("cos");
-				QuickDebug::Plot("cos", val);
+				QD::QuickDebug::Plot("cos", val);
 			}
 
 			// std::cout << text << std::endl;

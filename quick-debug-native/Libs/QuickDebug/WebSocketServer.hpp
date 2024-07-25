@@ -159,7 +159,7 @@ namespace Ext {
                 closesocket(listenSocket);
                 return;
             }
-            DEBUG_PRINT("[WebSocketServer] Listening on port %d\r\n", m_port);
+            // DEBUG_PRINT("[WebSocketServer] Listening on port %d\r\n", m_port);
 
 
             while (m_isRunning) {
@@ -178,7 +178,7 @@ namespace Ext {
                         closesocket(listenSocket);
                         throw "[WebSocketServer] Incoming connection accept failed: " + std::to_string(WSAGetLastError());
                     }
-                    DEBUG_PRINT("[WebSocketServer] Client connected on port %d\r\n", m_port);
+                    // DEBUG_PRINT("[WebSocketServer] Client connected on port %d\r\n", m_port);
 
                     ClientConnection client;
                     client.Thread = std::thread(&WebSocketServer::ClientLoop, this, clientSocket);
@@ -200,7 +200,7 @@ namespace Ext {
                 int error = WSAGetLastError();
                 if (error == WSAEWOULDBLOCK || error == WSAECONNRESET || error == WSAECONNABORTED)
                 {
-                    DEBUG_PRINT("[WebSocketServer] Socket socket closing, Error: %d \n", error);
+                    // DEBUG_PRINT("[WebSocketServer] Socket socket closing, Error: %d \n", error);
                     return false; // Socket is not connected
                 }
             }
@@ -223,7 +223,7 @@ namespace Ext {
                     if (!connectionEstablished) {
                         NegotiateConnection(clientSocket, buffer, bytesRead);
                         connectionEstablished = true;
-                        
+
                         if (m_onClientConnectedHandler)
                             m_onClientConnectedHandler(clientSocket);
                         continue;
@@ -279,15 +279,15 @@ namespace Ext {
                     delete[] decoded;
                 }
             }
-            
+
             DEBUG_PRINT("[WebSocketServer] Socket %llu: Cleaning up data\n", static_cast<ui64>(clientSocket));
-            
+
             m_activeClients.erase(std::remove_if(m_activeClients.begin(), m_activeClients.end(), [clientSocket](const ClientConnection& client) {
 				return client.Socket == clientSocket;
 			}), m_activeClients.end());
 
             DEBUG_PRINT("[WebSocketServer] Active clients: %d\n", m_activeClients.size());
-            
+
             auto result = shutdown(clientSocket, SD_BOTH);
             if (result == SOCKET_ERROR) {
                 DEBUG_PRINT("[WebSocketServer] Socket %llu: shutdown failed\n", static_cast<ui64>(clientSocket));

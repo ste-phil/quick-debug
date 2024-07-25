@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { chartManager } from "./entities/Store";
-  import { DataFlow } from "./entities/Entities";
-  import PlotModalList from "./PlotModalList.svelte";
-  import { Chart } from "./entities/ChartManager";
+  import PlotModalList from "@comps/PlotModalList.svelte";
+  import { chartManager } from "@ents/Store";
+  import { Chart } from "@ents/ChartManager";
 
   let chartsWith0: Chart[] = [];
   $: charts = chartManager.Charts;

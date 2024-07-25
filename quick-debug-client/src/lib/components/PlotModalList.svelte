@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import type { DataFlow } from "./entities/Entities";
   import type { Writable } from "svelte/store";
 
   export let dataFlowChartMap: Writable<Map<string, number>>;

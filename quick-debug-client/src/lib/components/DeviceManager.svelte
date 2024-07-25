@@ -1,34 +1,17 @@
 <script lang="ts">
-  import Input from "./Input.svelte";
-  import { ConnectionState, IpData } from "./entities/IpDataStore";
-  import { Settings } from "./entities/Entities";
+  import Input from "@comps/Input.svelte";
+  import { ConnectionState, IpData } from "@ents/IpDataStore";
+  import { Settings } from "@ents/Entities";
   import {
     freezePlotting,
     ipDataStore,
     configKeys,
     chartManager,
-  } from "./entities/Store";
+    recordingManager,
+  } from "@ents/Store";
 
-  let colorIdx = 0;
   let ipInputField: Input;
   let input: string;
-
-  const colorMap = [
-    "#00FF00",
-    "#0000FF",
-    "#FF00FF",
-    "#00FFFF",
-    "#FFFF00",
-    "#6600FF",
-    "#FF6600",
-    "#FF0000",
-    "#00FF00",
-    "#0000FF",
-    "#FF00FF",
-    "#00FFFF",
-    "#FFFF00",
-    "#6600FF",
-  ];
 
   function isIpValid(ipaddress: string) {
     if (ipaddress.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/)) {
@@ -81,28 +64,30 @@
     enum MessageType {
       Plot = "1",
       ConfigurationVariables = "2",
+      Recording = "3",
     }
 
-    const messageCounter = { value: 0 };
     data.Socket.onmessage = function (event) {
       const message = event.data;
       const data = message.split(";");
       const messageType = data[0];
 
-      if (messageType === MessageType.Plot)
-        processPlotMessage(data, messageCounter);
+      if (messageType === MessageType.Plot) processPlotMessage(data);
       else if (messageType === MessageType.ConfigurationVariables)
         processsConfigMessage(data);
+      else if (messageType === MessageType.Recording)
+        processRecordingMessage(data);
     };
   }
 
-  function processPlotMessage(data: string[], messageCounter: any) {
+  function processPlotMessage(data: string[]) {
     const field = data[1];
     const value = parseFloat(data[2]);
     if (!(!isNaN(value) && isFinite(value))) return;
 
-    if ($freezePlotting) return;
+    recordingManager.record(field, value);
 
+    if ($freezePlotting) return;
     chartManager.plot(field, value);
   }
 
@@ -116,13 +101,23 @@
 
     console.log($configKeys);
   }
+
+  function processRecordingMessage(data: string[]) {
+    const recordingEnabled = data[1];
+    if (recordingEnabled === "1") {
+      const recordingName = data[2];
+      recordingManager.startRecording(recordingName);
+    } else {
+      recordingManager.endRecording();
+    }
+  }
 </script>
 
 <div class="row top-padding left-padding right-padding no-space no-margin">
   <Input
     bind:this={ipInputField}
     bind:input
-    classes="max left-round border small"
+    classes="max left-round border small short"
     on:submit={addIp}
   />
   <button
@@ -140,14 +135,6 @@
     <div
       class="row primary-border border small-round small-padding context-menu"
     >
-      <!-- <label class="checkbox">
-				<input
-					type="checkbox"
-					bind:checked={ipData.IsEnabled}
-					id="x"
-				/>
-				<span></span>
-			</label> -->
       <p class="max large-text left-margin" id="ip-address">
         {ipData.IpAddress}
       </p>

@@ -35,3 +35,9 @@
     <span class="error hidden">{errorMessage}</span>
   {/if}
 </div>
+
+<style>
+  .short {
+    width: 145px;
+  }
+</style>

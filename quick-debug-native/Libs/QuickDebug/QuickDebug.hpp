@@ -1,5 +1,5 @@
-#ifndef QUICKDEBUG_HPP
-#define QUICKDEBUG_HPP
+#ifndef _HPP
+#define _HPP
 
 #include <string>
 #include <thread>
@@ -7,12 +7,16 @@
 #include <future>
 
 #include "Common.hpp"
+#include "Statistics.hpp"
+
 #include "WebSocketServer.hpp"
 #include "Content/index.html.h"
 #include "httplib.h"
 #include "Entities.hpp"
+//There are also includes at the bottom of the file, since they depend on QuickDebug struct
+//TODO: Reorganise class
 
-
+namespace QD {
 struct QuickDebug {
 	static const int WEBSERVER_PORT = 80;
 
@@ -42,6 +46,22 @@ struct QuickDebug {
 		m_messageQueue.Push(TransmissionMsg::CreatePlotMessage(graph, value));
 	}
 
+
+	/// @brief Instructs the website to start recording all values received from this point of time until StopRecording() is called
+	/// @param name The name of the recording that will be started
+	static inline void StartRecording(const char* name) {
+		Startup();
+
+		m_messageQueue.Push(TransmissionMsg::CreateStartRecordingMessage(name));
+	}
+
+	/// @brief Instructs the website to stop recording
+	static inline void StopRecording() {
+		Startup();
+
+		m_messageQueue.Push(TransmissionMsg::CreateStopRecordingMessage());
+	}
+
 	/// @brief Registers a key to be updated when a message with the key is received
 	/// @param key Make sure to pass a persistent pointer into key, since it will not be copied.
 	/// @param value
@@ -63,14 +83,32 @@ struct QuickDebug {
 	/// @brief Registers a key to be updated when a message with the key is received
 	/// @param key Make sure to pass a persistent pointer into key, since it will not be copied.
 	/// @param value
+	static inline void RegisterRecvKey(const char* key, const ui32& value)
+	{
+		RecvMessageConfig config(2, &value);
+		m_recvMessageConfigs[key] = config;
+	}
+
+
+	/// @brief Registers a key to be updated when a message with the key is received
+	/// @param key Make sure to pass a persistent pointer into key, since it will not be copied.
+	/// @param value
 	static inline void RegisterRecvKey(const char* key, const FixedString<32>& value)
 	{
 		RecvMessageConfig config(3, &value);
 		m_recvMessageConfigs[key] = config;
 	}
-	
-	
-	/// @brief This has to be called before the first QuickDebug::Plot() is called, to be able to take effect.
+
+	/// @brief Registers a key to be updated when a message with the key is received
+	/// @param key Make sure to pass a persistent pointer into key, since it will not be copied.
+	/// @param value
+	static inline void RegisterRecvKey(const char* key, const bool& value)
+	{
+		RecvMessageConfig config(4, &value);
+		m_recvMessageConfigs[key] = config;
+	}
+
+	/// @brief This has to be called before the first ::Plot() is called, to be able to take effect.
 	/// @param cfg
 	static inline void Configure(QuickDebugConfig cfg) {
 		m_cfg = cfg;
@@ -93,10 +131,8 @@ struct QuickDebug {
 		m_publishPlotMessageThread = std::thread([&]() {
 			while (m_server.IsRunning())
 			{
-				for (int i = 0; i < m_messageQueue.Size(); i++) {
-					auto data = m_messageQueue.Pop();
-					m_server.BroadcastMessage(data.message);
-				}
+				auto data = m_messageQueue.Pop();
+				m_server.BroadcastMessage(data.message);
 			}
 		});
 		m_publishPlotMessageThread.detach();
@@ -124,10 +160,9 @@ private:
 	static inline void OnClientConnected(SOCKET s)
 	{
 		m_messageQueue.Push(TransmissionMsg::CreateConfigurationVariableMessage(m_recvMessageConfigs));
-		std::cout << "[QuickDebug] OnClientConnected: " << s << "\n";
-		
+		std::cout << "[QD] OnClientConnected: " << s << "\n";
 	}
-	
+
 	static inline void OnMessageReceived(SOCKET s, const std::string& msg) {
 		auto key = msg.substr(0, msg.find(';'));
 		auto value = msg.substr(msg.find(';') + 1);
@@ -142,13 +177,13 @@ private:
 		case 1:
 		{
 			auto* targetValue = (float*)config.targetValue;
-			*targetValue = std::stof(value); 
+			*targetValue = std::stof(value);
 			break;
 		}
 		case 2:
 		{
 			auto* targetValue = (i32*)config.targetValue;
-			*targetValue = std::stoi(value); 
+			*targetValue = std::stoi(value);
 			break;
 		}
 		case 3:
@@ -157,12 +192,18 @@ private:
 			*targetValue = FixedString<32>(value.c_str());
 			break;
 		}
+		case 4:
+		{
+			auto* targetValue = (bool*)config.targetValue;
+			*targetValue = (bool) std::stoi(value);
+			break;
+		}
 		default:
 			return;
 		}
-		
+
 	}
-	
+
 	static inline bool IsRunning() {
 		return m_server.IsRunning();
 	}
@@ -172,7 +213,7 @@ private:
 			res.set_content(Content::index_html, "text/html");
 		});
 
-		m_webserver.listen("0.0.0.0", 80);
+		m_webserver.listen("0.0.0.0", WEBSERVER_PORT);
 	}
 
 	static inline ConcurrentQueue<TransmissionMsg> m_messageQueue;
@@ -180,10 +221,12 @@ private:
 
 	static inline std::thread m_webServerThread;
 	static inline httplib::Server m_webserver;
-	
+
 	static inline QuickDebugConfig m_cfg;
 	static inline Ext::WebSocketServer m_server;
-	static inline std::map<std::string, RecvMessageConfig> m_recvMessageConfigs; 
+	static inline std::map<std::string, RecvMessageConfig> m_recvMessageConfigs;
 };
+}
 
+#include "Interop.hpp"
 #endif

@@ -1,11 +1,13 @@
-import { writable, type Invalidator, type Subscriber, type Unsubscriber, type Updater, type Writable } from "svelte/store";
+import { writable, type Writable } from "svelte/store";
 import { IpDataStore } from "./IpDataStore";
-import { ChartContext, ChartManager } from "./ChartManager";
+import { ChartManager } from "./ChartManager";
 import { UseLocalStorage } from "./Utils";
 import { ConfigMessage } from "./Entities";
+import { RecordingManager } from "./RecordingManager";
 
 
-export const chartManager: ChartManager = new ChartManager();
+export const chartManager = new ChartManager();
+export const recordingManager = new RecordingManager();
 export const ipDataStore: IpDataStore = new IpDataStore()
 export const configMessages: Writable<ConfigMessage[]> = UseLocalStorage("config-messages", [
 	new ConfigMessage("TestMessage", "8000"),

@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import { chartManager } from "./entities/Store";
-  import { Chart } from "./entities/ChartManager";
-  import { EZoomState, NumberRange } from "scichart";
+  import { chartManager } from "lib/entities/Store";
+  import { Chart } from "lib/entities/ChartManager";
 
   let elementRefs: HTMLElement[] = [];
 
