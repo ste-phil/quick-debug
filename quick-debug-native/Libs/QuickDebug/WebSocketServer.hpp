@@ -7,30 +7,51 @@
 #include <atomic>
 #include <string>
 #include <functional>
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-
 #include "Hash/sha1.h"
 #include "Common.hpp"
 
+
+#ifdef _WIN32
+#include <WinSock2.h>
+#include <WS2tcpip.h>
 #pragma comment(lib, "Ws2_32.lib")
+
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
+#define SOCKET int
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
+#define closesocket close
+#define SD_BOTH SHUT_RDWR
+#endif
+
+
+
 
 namespace Ext {
     class WebSocketServer {
     public:
         explicit WebSocketServer() : m_port(0), m_isRunning(false) {
+#ifdef _WIN32
             WSADATA wsaData;
             int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
             if (result != 0) {
                 throw "WSA Startup failed, Error: " + std::to_string(result);
             }
+#endif
         }
 
         ~WebSocketServer() {
             if (m_isRunning)
                 Stop();
-
+#ifdef _WIN32
             WSACleanup();
+#endif
         }
 
         void Start(int port) {
@@ -124,10 +145,25 @@ namespace Ext {
             ::send(client_socket,  data, length, 0);
         }
 
+        int GetLastErrror() {
+#ifdef _WIN32
+            return WSAGetLastError();
+#else
+            return errno;
+#endif
+        }
+
+        bool IsError(int errorCode) {
+#ifdef _WIN32
+            return errorCode == WSAEWOULDBLOCK || errorCode == WSAECONNRESET || errorCode == WSAECONNABORTED;
+#else
+            return errorCode != 0;
+#endif
+        }
 
         void ServerLoop() {
             struct addrinfo hints, * result = nullptr;
-            ZeroMemory(&hints, sizeof(hints));
+            std::memset(&hints, 0, sizeof(hints));
             hints.ai_family = AF_INET; // IPv4
             hints.ai_socktype = SOCK_STREAM;
             hints.ai_protocol = IPPROTO_TCP;
@@ -141,21 +177,21 @@ namespace Ext {
             SOCKET listenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
             if (listenSocket == INVALID_SOCKET) {
                 freeaddrinfo(result);
-                throw "[WebSocketServer] Socket creation failed with error: " + WSAGetLastError();
+                throw "[WebSocketServer] Socket creation failed with error: " + GetLastErrror();
             }
 
             result_val = bind(listenSocket, result->ai_addr, (int)result->ai_addrlen);
             if (result_val == SOCKET_ERROR) {
                 freeaddrinfo(result);
                 closesocket(listenSocket);
-                throw "[WebSocketServer] Socket bind failed with error: " + WSAGetLastError();
+                throw "[WebSocketServer] Socket bind failed with error: " + GetLastErrror();
             }
 
             freeaddrinfo(result);
 
             result_val = listen(listenSocket, SOMAXCONN);
             if (result_val == SOCKET_ERROR) {
-                throw "[WebSocketServer] Socket listen failed with error: " + WSAGetLastError();
+                throw "[WebSocketServer] Socket listen failed with error: " + GetLastErrror();
                 closesocket(listenSocket);
                 return;
             }
@@ -176,7 +212,7 @@ namespace Ext {
                     SOCKET clientSocket = accept(listenSocket, nullptr, nullptr);
                     if (clientSocket == INVALID_SOCKET) {
                         closesocket(listenSocket);
-                        throw "[WebSocketServer] Incoming connection accept failed: " + std::to_string(WSAGetLastError());
+                        throw "[WebSocketServer] Incoming connection accept failed: " + std::to_string(GetLastErrror());
                     }
                     // DEBUG_PRINT("[WebSocketServer] Client connected on port %d\r\n", m_port);
 
@@ -197,10 +233,10 @@ namespace Ext {
             char buffer[1];
             int result = recv(socket, buffer, sizeof(buffer), MSG_PEEK);
             if (result == SOCKET_ERROR) {
-                int error = WSAGetLastError();
-                if (error == WSAEWOULDBLOCK || error == WSAECONNRESET || error == WSAECONNABORTED)
+                int error = GetLastErrror();
+                if (IsError(error))
                 {
-                    // DEBUG_PRINT("[WebSocketServer] Socket socket closing, Error: %d \n", error);
+                    DEBUG_PRINT("[WebSocketServer] Socket socket closing, Error: %d \n", error);
                     return false; // Socket is not connected
                 }
             }
