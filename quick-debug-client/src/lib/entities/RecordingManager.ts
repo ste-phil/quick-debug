@@ -1,4 +1,5 @@
 import { writable, type Writable } from "svelte/store";
+import { ReadWritable } from "./Utils";
 
 const dbName = 'RecordingDatabase';
 const storeName = 'Recordings';
@@ -138,12 +139,54 @@ export class RecordingManager {
     }
   }
 
+  async deleteRecording(recordingName: string) {
+    const db = await this.openDatabase();
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+
+    this.recordings.update((recordings) => recordings.filter((recording) => recording.name !== recordingName));
+    store.delete(recordingName);
+
+    return new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => {
+        resolve();
+      };
+
+      transaction.onerror = () => {
+        reject(transaction.error);
+      };
+    });
+  }
+
+  async deleteAllRecordings() {
+    const db = await this.openDatabase();
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+
+    store.clear();  // Clear all records from the object store
+
+    return new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => {
+        this.finishedRecordings.set([]);  // Clear the local store as well
+        resolve();
+      };
+
+      transaction.onerror = () => {
+        reject(transaction.error);
+      };
+    });
+  }
+
   private async storeRecording(recording: Recording) {
     const db = await this.openDatabase();
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
 
-    store.put(recording);
+    let uniqueName = await this.getUniqueRecordingName(recording.name, store);
+    recording.name = uniqueName;
+    this.recordings.update((recordings) => recordings); // force reload of ui
+
+    store.put(recording, recording.name); // Store using the unique name
 
     return new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => {
@@ -180,6 +223,34 @@ export class RecordingManager {
     });
   }
 
+  private async getUniqueRecordingName(name: string, store: IDBObjectStore): Promise<string> {
+    let newName = name;
+    let index = 1;
+
+    if (name == "")
+      name = "UnnamedRecording";
+
+    while (await this.recordingNameExists(newName, store)) {
+      newName = `${name}_${index++}`;
+    }
+
+    return newName;
+  }
+
+  private async recordingNameExists(name: string, store: IDBObjectStore): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+      const request = store.get(name);
+
+      request.onsuccess = () => {
+        resolve(!!request.result); // Resolve to true if the recording exists
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  }
+
   openDatabase() {
     return new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(dbName, 1);
@@ -187,7 +258,7 @@ export class RecordingManager {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(storeName)) {
-          db.createObjectStore(storeName, { autoIncrement: true });
+          db.createObjectStore(storeName);
         }
       };
 

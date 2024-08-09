@@ -19,6 +19,12 @@
     if (e.key === " ") {
       freezePlotting.set(!$freezePlotting);
     }
+    if (e.key === "c") {
+      ui("#chart-plotting-modal");
+    }
+    if (e.key === "r") {
+      ui("#recording-modal");
+    }
   }
 
   function changeColorMode() {
@@ -56,7 +62,6 @@
 </main>
 <footer class="fixed surface-container" style="min-block-size: 3rem">
   <nav>
-    <!-- <div class="large-space"></div> -->
     <button data-ui="#chart-plotting-modal" class="circle transparent">
       <i>bar_chart</i>
     </button>

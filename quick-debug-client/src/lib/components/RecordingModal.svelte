@@ -1,12 +1,6 @@
 <script lang="ts">
-  import { DataFlow } from "@ents/Entities";
-  import {
-    RecordingStats,
-    type Record,
-    type Recording,
-  } from "@ents/RecordingManager";
+  import { type Record, type Recording } from "@ents/RecordingManager";
   import { recordingManager } from "@ents/Store";
-  import { writable, type Writable } from "svelte/store";
 
   class SelectableDataFlows {
     entries: Array<[name: string, count: number, selected: boolean]>;
@@ -58,9 +52,7 @@
       return;
     }
 
-    $recordings = $recordings.filter(
-      (recording) => recording !== selectedRecording
-    );
+    recordingManager.deleteRecording(selectedRecording.name);
     selectedRecording = null;
   }
 
@@ -98,12 +90,29 @@
       }, i++ * 200);
     }
   }
+
+  function deleteAll() {
+    if (window.confirm("Are you sure you want to delete all recordings?")) {
+      recordingManager.deleteAllRecordings();
+    }
+  }
 </script>
 
 <div class="overlay blur"></div>
 <dialog id="recording-modal" class="small-round large">
   <div class="row">
     <h5>Recordings</h5>
+
+    <button class="small-round" on:click={downloadAllRecordings}>
+      <i style="transform: scale(0.5);">download</i>
+      <i style="margin-left: -32px; transform: scale(1.2)">folder</i>
+      <span>Download All</span>
+    </button>
+    <button class="small-round" on:click={deleteAll}
+      ><i>delete</i>
+      <span>Delete All</span>
+    </button>
+
     <div class="max"></div>
     <button class="transparent link circle" data-ui="#recording-modal"
       ><i>close</i>
@@ -152,12 +161,6 @@
   </div>
 
   <div class="row center-align responsive">
-    <button class="small-round" on:click={downloadAllRecordings}>
-      <i style="transform: scale(0.5);">download</i>
-      <i style="margin-left: -32px; transform: scale(1.2)">folder</i>
-      <span>Download All</span>
-    </button>
-
     <button
       class="small-round"
       disabled={selectedRecording == null}
