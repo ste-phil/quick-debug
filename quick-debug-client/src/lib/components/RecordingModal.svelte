@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DataFlow } from "@ents/Entities";
   import {
     RecordingStats,
     type Record,
@@ -63,7 +64,21 @@
     selectedRecording = null;
   }
 
-  function downloadRecording() {
+  function downloadRecording(
+    recording: Recording,
+    selectedDataFlows: string[]
+  ) {
+    const csvContent = recording.convertToCSV(selectedDataFlows);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = recording.name + ".csv";
+    link.click();
+    URL.revokeObjectURL(url); // Clean up the URL object
+  }
+
+  function downloadSelectedRecording() {
     if (selectedRecording == null) {
       return;
     }
@@ -72,14 +87,16 @@
       .filter(([_, __, selected]) => selected)
       .map(([dataFlow, _, __]) => dataFlow);
 
-    const csvContent = selectedRecording.convertToCSV(selected);
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "recordings.csv";
-    link.click();
-    URL.revokeObjectURL(url); // Clean up the URL object
+    downloadRecording(selectedRecording, selected);
+  }
+
+  function downloadAllRecordings() {
+    let i = 0;
+    for (let recording of $recordings) {
+      setTimeout(() => {
+        downloadRecording(recording, []);
+      }, i++ * 200);
+    }
   }
 </script>
 
@@ -135,10 +152,16 @@
   </div>
 
   <div class="row center-align responsive">
+    <button class="small-round" on:click={downloadAllRecordings}>
+      <i style="transform: scale(0.5);">download</i>
+      <i style="margin-left: -32px; transform: scale(1.2)">folder</i>
+      <span>Download All</span>
+    </button>
+
     <button
       class="small-round"
       disabled={selectedRecording == null}
-      on:click={downloadRecording}
+      on:click={downloadSelectedRecording}
     >
       <i>download</i>
       <span>Download</span>
