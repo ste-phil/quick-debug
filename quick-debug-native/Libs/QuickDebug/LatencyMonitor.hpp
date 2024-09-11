@@ -29,6 +29,40 @@ namespace QD
       timestampMeasurement->timestamps.push_back(std::make_pair(name, std::chrono::steady_clock::now()));
     }
 
+    /*
+      Measures the time delta between this timestamp and the previous one with the given name.
+     */
+    static std::chrono::microseconds MeasureTimeDelta(int64_t xrTimestamp, const char* name) {
+      auto it = s_registeredTimestampMeasurements.find(xrTimestamp);
+
+      if (it != myMap.end() && it != myMap.begin()) {
+        auto latestMeasurement = it->second;
+        auto prevMeasurement = --it->second;
+
+        auto measurementIt = std::find_if(latestMeasurement->timestamps.begin(), latestMeasurement->timestamps.end(), [name](const auto& pair) {
+          return std::strcmp(pair->first, name) == 0;
+        });
+        if (measurementIt == latestMeasurement->timestamps.end()) {
+          return std::chrono::microseconds(0); // No measurement found using xrTimestamp with the given name
+        }
+        auto latestTimestamp = measurementIt->second;
+
+
+        auto measurementPrevIt = std::find_if(prevMeasurement->timestamps.begin(), prevMeasurement->timestamps.end(), [name](const auto& pair) {
+          return std::strcmp(pair.first, name) == 0;
+        });
+        if (measurementIt == latestMeasurement->timestamps.end()) {
+          return std::chrono::microseconds(0); // The preceding measurment was found, but the entry with the given name was not found
+        }
+        auto prevTimestamp = measurementPrevIt->second;
+
+        auto latency = std::chrono::duration_cast<std::chrono::microseconds>(latestTimestamp - prevTimestamp);
+        return latency;
+      } else {
+        return std::chrono::microseconds(0); // No preceding measurement was taken (this is the first measurement)
+      }
+    }
+
     static std::chrono::microseconds MeasureElapsedTime(int64_t xrTimestamp, const char* begin, const char* end) {
       std::lock_guard<std::mutex> lock(s_apiMutex);
 
