@@ -35,23 +35,24 @@ namespace QD
     static std::chrono::microseconds MeasureTimeDelta(int64_t xrTimestamp, const char* name) {
       auto it = s_registeredTimestampMeasurements.find(xrTimestamp);
 
-      if (it != myMap.end() && it != myMap.begin()) {
-        auto latestMeasurement = it->second;
-        auto prevMeasurement = --it->second;
+      if (it != s_registeredTimestampMeasurements.end() && it != s_registeredTimestampMeasurements.begin()) {
+        const auto& latestMeasurement = it->second;
+        --it;
+        const auto& prevMeasurement = it->second;
 
-        auto measurementIt = std::find_if(latestMeasurement->timestamps.begin(), latestMeasurement->timestamps.end(), [name](const auto& pair) {
-          return std::strcmp(pair->first, name) == 0;
+        auto measurementIt = std::find_if(latestMeasurement.timestamps.begin(), latestMeasurement.timestamps.end(), [name](const auto& pair) {
+          return std::strcmp(pair.first, name) == 0;
         });
-        if (measurementIt == latestMeasurement->timestamps.end()) {
+        if (measurementIt == latestMeasurement.timestamps.end()) {
           return std::chrono::microseconds(0); // No measurement found using xrTimestamp with the given name
         }
         auto latestTimestamp = measurementIt->second;
 
 
-        auto measurementPrevIt = std::find_if(prevMeasurement->timestamps.begin(), prevMeasurement->timestamps.end(), [name](const auto& pair) {
+        auto measurementPrevIt = std::find_if(prevMeasurement.timestamps.begin(), prevMeasurement.timestamps.end(), [name](const auto& pair) {
           return std::strcmp(pair.first, name) == 0;
         });
-        if (measurementIt == latestMeasurement->timestamps.end()) {
+        if (measurementPrevIt == latestMeasurement.timestamps.end()) {
           return std::chrono::microseconds(0); // The preceding measurment was found, but the entry with the given name was not found
         }
         auto prevTimestamp = measurementPrevIt->second;
