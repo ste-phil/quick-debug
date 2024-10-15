@@ -8,10 +8,38 @@
 
 
 #include "Libs/QuickDebug/QuickDebug.hpp"
-#include "Libs/Analysis.h"
+#include "Libs/QuickDebug/LatencyMonitor.hpp"
+#include "Libs/QuickDebug/Common/Analysis.h"
+
+void TestAnalysis() {
+	using namespace QD;
+	{
+		Timer x1("Group", true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		Timer x2("Group>Subgroup", true);
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+		{
+			Timer x3("Group>Subgroup>A", true);
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+		}
+
+		{
+			Timer x3("Group>Subgroup>B", true);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+	}
+
+	GroupTimer::PrintTracked();
+}
 
 int main()
 {
+	TestAnalysis();
+	return 0;
+
+
 	QD::QuickDebug::Startup({
 		.UseWebserver = false
 	});
@@ -33,8 +61,15 @@ int main()
 			{
 				// Timer("sin");
 				QD::QuickDebug::Plot("sin", val);
+
+				if (i % 4 == 0)
+					QD::LatencyMonitor::TakeTimestampMeasurement(i, "sin");
+				auto elapsed = QD::LatencyMonitor::MeasureTimeDelta(i, "sin");
+				QD::LatencyMonitor::SendTimestampMeasurement(i, false);
+				QD::QuickDebug::Plot("sin dt (ms)", elapsed.count() / 1000);
 			}
-			Sleep(MSG_DELAY_MS);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(MSG_DELAY_MS));
 		}
 	}).detach();
 	
@@ -46,6 +81,7 @@ int main()
 			// std::cout << "Sending message: " << val << std::endl;
 			{
 				// Timer("cos");
+				QD::LatencyMonitor::TakeTimestampMeasurement(i, "cos");
 				QD::QuickDebug::Plot("cos", val);
 			}
 

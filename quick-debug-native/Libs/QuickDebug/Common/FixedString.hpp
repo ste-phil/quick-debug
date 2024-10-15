@@ -55,7 +55,13 @@ private:
         if (length > SIZE) {
             length = SIZE;
         }
+        #if defined(_MSC_VER) && _MSC_VER >= 1400
+        // Use the safer version of strncpy on MSVC
+        strncpy_s(data, str, length);
+        #else
         std::strncpy(data, str, length);
+        #endif
+
         // Null-terminate the remaining part of the array if necessary
         std::memset(data + length, 0, SIZE + 1 - length);
     }

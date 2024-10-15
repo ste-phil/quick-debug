@@ -132,11 +132,19 @@ namespace QD {
   private:
     static std::string GetCurrentTimestamp() {
         auto now = std::time(nullptr);
-        std::tm* nowTm = std::localtime(&now);
+#ifdef _MSC_VER // MSVC does not support std::put_time
+        std::tm nowTm;
+        localtime_s(&nowTm, &now);
 
+        char buffer[80];
+        std::strftime(buffer, sizeof(buffer), "%d%m%Y_%H%M%S_", &nowTm);
+        return std::string(buffer);
+#else
+        std::tm* nowTm = std::localtime(&now);
         std::ostringstream oss;
         oss << std::put_time(nowTm, "%d%m%Y_%H%M%S_");
         return oss.str();
+#endif
     }
 
     static inline std::unordered_map<std::string, std::vector<std::string>> m_data; // Static m_data member to store key-value pairs

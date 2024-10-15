@@ -79,7 +79,8 @@ namespace Ext {
                 throw "Server is not running!";
 
             m_isRunning = false;
-            m_serverThread.join();
+            if (m_serverThread.joinable())
+                m_serverThread.join();
         }
 
         bool IsRunning() const {
@@ -207,7 +208,7 @@ namespace Ext {
                 closesocket(listenSocket);
                 return;
             }
-            DEBUG_PRINT("[WebSocketServer] Listening on port %d\r\n", m_port);
+            DEBUG_PRINT("[WebSocketServer] Listening on port " PRINT_INT64 PRINT_STRING, m_port, "\r\n");
 
             while (m_isRunning) {
                 fd_set readfds;
@@ -368,7 +369,7 @@ namespace Ext {
                 return client.Socket == clientSocket;
             }), m_activeClients.end());
 
-            DEBUG_PRINT("[WebSocketServer] Active clients: %d\n", m_activeClients.size());
+            DEBUG_PRINT("[WebSocketServer] Active clients: %llu\n", m_activeClients.size());
 
             auto result = shutdown(clientSocket, SD_BOTH);
             if (result == SOCKET_ERROR) {
@@ -402,7 +403,7 @@ namespace Ext {
                 response += "Sec-WebSocket-Accept: " + result + "\r\n";
                 response += "\r\n";
 
-                send(clientSocket, response.c_str(), response.size(), 0);
+                send(clientSocket, response.c_str(), static_cast<int>(response.size()), 0);
             }
         }
 
